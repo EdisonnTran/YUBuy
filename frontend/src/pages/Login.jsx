@@ -8,6 +8,8 @@ export default function Login() {
 
   const handleSignIn = () => {
     console.log('Sign in clicked', { email, password })
+        // will connect to backend later
+
   }
 
   return (
@@ -21,7 +23,7 @@ export default function Login() {
         <label style={{ color: 'white', marginTop: '32px', marginBottom: '8px' }}>Email</label>
         <input
           type="email"
-          placeholder="you@yorku.ca"
+          placeholder="you@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           style={{ padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#a4a4a4', color: 'white', fontSize: '16px' }}
