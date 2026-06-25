@@ -48,6 +48,12 @@ export default function Checkout() {
       postalCode, country, phoneNumber, cardNumber, expirationDate, securityCode
     })
   }
+  const handlePhoneNumber = (e) => {
+    const value = e.target.value
+    if (/^\d{0,10}$/.test(value)){
+      setPhoneNumber(value)
+    }
+  }
   const handleCreditCardNumber = (e) => {
     const value = e.target.value
     if (/^\d{0,16}$/.test(value)){
@@ -56,17 +62,16 @@ export default function Checkout() {
   }
   const handleExpirationDate = (e) => {
     const value = e.target.value
-    if (/^\d{0,4}$/.test(value)){
-      setCardNumber(value)
+    if (/^\d{0,2}\/?\d{0,2}$/.test(value)){
+      setExpirationDate(value)
     }
   }
   const handleSecurityCode = (e) => {
     const value = e.target.value
     if (/^\d{0,3}$/.test(value)){
-      setCardNumber(value)
+      setSecurityCode(value)
     }
   }
-
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
 
@@ -161,7 +166,7 @@ export default function Checkout() {
               type="text"
               placeholder="123-456-7890"
               value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
+              onChange={handlePhoneNumber}
               style={inputStyle}
             />
           </div>
