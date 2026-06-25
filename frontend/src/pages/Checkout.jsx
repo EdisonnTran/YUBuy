@@ -181,6 +181,40 @@ export default function Checkout() {
             >
               $0.00
             </div>
+            <label style={{ ...labelStyle, textAlign: 'center' }}>Shipping</label>
+            <div
+              style={{
+                ...inputStyle,
+                textAlign: 'center',
+                color: '#181313',
+                fontWeight: '600',
+              }}
+            >
+              $0.00
+            </div>
+            <label style={{ ...labelStyle, textAlign: 'center' }}>Tax</label>
+            <div
+              style={{
+                ...inputStyle,
+                textAlign: 'center',
+                color: '#181313',
+                fontWeight: '600',
+              }}
+            >
+              $0.00
+            </div>
+
+            <label style={{ ...labelStyle, textAlign: 'center' }}>You Pay</label>
+            <div
+              style={{
+                ...inputStyle,
+                textAlign: 'center',
+                color: '#181313',
+                fontWeight: '600',
+              }}
+            >
+              $0.00
+            </div>
           </div>
 
           <h2 style={{ color: 'white', fontSize: '20px', fontWeight: 'bold', textAlign: 'center', marginTop: 0, marginBottom: '20px' }}>
