@@ -48,6 +48,24 @@ export default function Checkout() {
       postalCode, country, phoneNumber, cardNumber, expirationDate, securityCode
     })
   }
+  const handleCreditCardNumber = (e) => {
+    const value = e.target.value
+    if (/^\d{0,16}$/.test(value)){
+      setCardNumber(value)
+    }
+  }
+  const handleExpirationDate = (e) => {
+    const value = e.target.value
+    if (/^\d{0,4}$/.test(value)){
+      setCardNumber(value)
+    }
+  }
+  const handleSecurityCode = (e) => {
+    const value = e.target.value
+    if (/^\d{0,3}$/.test(value)){
+      setCardNumber(value)
+    }
+  }
 
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
@@ -227,7 +245,7 @@ export default function Checkout() {
               type="text"
               placeholder="1234567890123456"
               value={cardNumber}
-              onChange={(e) => setCardNumber(e.target.value)}
+              onChange={handleCreditCardNumber}
               style={inputStyle}
             />
           </div>
@@ -239,7 +257,7 @@ export default function Checkout() {
                 type="text"
                 placeholder="__/__"
                 value={expirationDate}
-                onChange={(e) => setExpirationDate(e.target.value)}
+                onChange={handleExpirationDate}
                 style={inputStyle}
               />
             </div>
@@ -250,7 +268,7 @@ export default function Checkout() {
                 type="text"
                 placeholder="123"
                 value={securityCode}
-                onChange={(e) => setSecurityCode(e.target.value)}
+                onChange={handleSecurityCode}
                 style={inputStyle}
               />
             </div>
