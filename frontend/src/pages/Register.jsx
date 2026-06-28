@@ -15,6 +15,13 @@ export default function Register() {
       setError('All fields are required')
       return
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address')
+      return
+    }
+
     if (password.length < 8) {
       setError('Password must be at least 8 characters')
       return
@@ -23,7 +30,6 @@ export default function Register() {
     console.log('Register clicked', { name, email, password })
     // will connect to backend later
     navigate('/listings')
-
   }
 
   // Left side for registration fields

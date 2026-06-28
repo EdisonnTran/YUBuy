@@ -14,6 +14,13 @@ export default function Login() {
       setError('All fields are required')
       return
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address')
+      return
+    }
+
     setError('')
     console.log('Sign in clicked', { email, password })
     // will connect to backend later
