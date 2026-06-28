@@ -17,6 +17,7 @@ export default function Login() {
     setError('')
     console.log('Sign in clicked', { email, password })
     // will connect to backend later
+    navigate('/listings')
   }
 
   return (

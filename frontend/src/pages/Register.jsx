@@ -22,6 +22,8 @@ export default function Register() {
     setError('')
     console.log('Register clicked', { name, email, password })
     // will connect to backend later
+    navigate('/listings')
+
   }
 
   // Left side for registration fields
