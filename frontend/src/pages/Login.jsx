@@ -1,0 +1,96 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaTag } from 'react-icons/fa'
+
+export default function Login() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const navigate = useNavigate()
+
+  const handleSignIn = () => {
+    if (!email || !password) {
+      setError('All fields are required')
+      return
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address')
+      return
+    }
+
+    setError('')
+    console.log('Sign in clicked', { email, password })
+    // will connect to backend later
+    navigate('/listings')
+  }
+
+  return (
+    <div style={{ display: 'flex', height: '100vh' }}>
+
+      {/* Left side for login fields */}
+      <div style={{ flex: 1, backgroundColor: '#2a2a2a', padding: '60px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center' }}>
+          <FaTag style={{ fontSize: '32px', color: 'rgba(204,0,0,0.3)' }} />
+          <h2 style={{ color: '#CC0000', fontSize: '32px', fontWeight: 'bold', margin: '0' }}>YU<span style={{ color: 'white', fontWeight: '400' }}>Buy</span></h2>
+        </div>
+
+        <h1 style={{ color: 'white', fontSize: '36px', fontWeight: 'bold', marginTop: '40px' }}>Welcome Back</h1>
+        <p style={{ color: '#aaaaaa', fontSize: '18px', marginTop: '8px' }}>Sign in to your YUBuy account</p>
+
+        <div style={{ position: 'relative', marginTop: '32px' }}>
+          <FaEnvelope style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'white' }} />
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={{ width: '100%', padding: '12px 12px 12px 36px', borderRadius: '8px', border: 'none', backgroundColor: '#a4a4a4', color: 'white', fontSize: '16px', boxSizing: 'border-box' }}
+          />
+        </div>
+
+        <div style={{ position: 'relative', marginTop: '16px' }}>
+          <FaLock style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'white' }} />
+          <input
+            type={showPassword ? 'text' : 'password'}
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{ width: '100%', padding: '12px 36px 12px 36px', borderRadius: '8px', border: 'none', backgroundColor: '#a4a4a4', color: 'white', fontSize: '16px', boxSizing: 'border-box' }}
+          />
+          {showPassword
+            ? <FaEyeSlash onClick={() => setShowPassword(false)} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'white', cursor: 'pointer' }} />
+            : <FaEye onClick={() => setShowPassword(true)} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'white', cursor: 'pointer' }} />
+          }
+        </div>
+
+        {error && <p style={{ color: '#ff4444', fontSize: '13px', marginTop: '8px' }}>{error}</p>}
+
+        <button
+          onClick={handleSignIn}
+          style={{ marginTop: '40px', padding: '16px', backgroundColor: '#CC0000', color: 'white', border: 'none', borderRadius: '12px', fontSize: '18px', fontWeight: '500', cursor: 'pointer' }}
+        >
+          Sign In
+        </button>
+
+        <p style={{ color: 'white', marginTop: '24px', textAlign: 'center' }}>
+          Don't have an account?{' '}
+          <span onClick={() => navigate('/register')} style={{ color: '#CC0000', cursor: 'pointer', fontWeight: 'bold' }}>
+            Create one now!
+          </span>
+        </p>
+      </div>
+
+      {/* Right side, YUBuy branding*/}
+      <div style={{ flex: 1, backgroundColor: '#CC0000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px', textAlign: 'center' }}>
+        <FaTag style={{ fontSize: '80px', color: 'rgba(255,255,255,0.3)', marginBottom: '24px' }} />
+        <h2 style={{ color: 'white', fontSize: '36px', fontWeight: 'bold', marginBottom: '20px' }}>York University's Marketplace</h2>
+        <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '18px', lineHeight: '1.6' }}>Buy and sell textbooks, furniture, electronics and more — exclusively for York students.</p>
+      </div>
+
+    </div>
+  )
+}
