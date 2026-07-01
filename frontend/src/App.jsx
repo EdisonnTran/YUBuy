@@ -4,6 +4,7 @@ import Register from './pages/Register'
 import ListingDetail from './pages/ListingDetails'
 import Listings from './pages/Listings'
 import Checkout from './pages/Checkout'
+import SellerProfile from './pages/SellerProfile'
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/listings/:id" element={<ListingDetail />} />
         <Route path="/listings" element={<Listings />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/profile" element={<SellerProfile />} />
       </Routes>
     </BrowserRouter>
   )
