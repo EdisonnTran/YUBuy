@@ -14,9 +14,20 @@ export default function Login() {
       setError('All fields are required')
       return
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address')
+      return
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters')
+      return
+    }
     setError('')
     console.log('Sign in clicked', { email, password })
     // will connect to backend later
+    navigate('/listings')
   }
 
   return (

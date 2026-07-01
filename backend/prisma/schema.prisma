@@ -1,14 +1,117 @@
+// YUBuy — Prisma schema
+// EECS 4314 (Advanced Software Engineering, Summer 2026) · Group 5
+// Entities: User, Category, Listing, Image, Message, Rating
+// Validated against Prisma 7.8.0
+
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-model UserTest {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  REMOVED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  listings         Listing[] @relation("SellerListings")
+  wishlist         Listing[] @relation("Wishlist")
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  ratingsGiven     Rating[]  @relation("RatingsGiven")
+  ratingsReceived  Rating[]  @relation("RatingsReceived")
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  listings Listing[]
+}
+
+model Listing {
+  id          String        @id @default(cuid())
+  title       String
+  description String
+  price       Decimal       @db.Decimal(10, 2)
+  proximity   String?
+  status      ListingStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  seller     User      @relation("SellerListings", fields: [sellerId], references: [id])
+  sellerId   String
+  category   Category  @relation(fields: [categoryId], references: [id])
+  categoryId String
+  images     Image[]
+  messages   Message[]
+  ratings    Rating[]
+  savedBy    User[]    @relation("Wishlist")
+
+  @@index([categoryId])
+  @@index([sellerId])
+  @@index([status])
+  @@index([price])
+}
+
+model Image {
+  id        String   @id @default(cuid())
+  url       String
+  createdAt DateTime @default(now())
+
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listingId String
+
+  @@index([listingId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  listing    Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listingId  String
+  sender     User    @relation("SentMessages", fields: [senderId], references: [id])
+  senderId   String
+  receiver   User    @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  receiverId String
+
+  @@index([listingId])
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  score     Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listingId String
+  author    User    @relation("RatingsGiven", fields: [authorId], references: [id])
+  authorId  String
+  subject   User    @relation("RatingsReceived", fields: [subjectId], references: [id])
+  subjectId String
+
+  @@unique([authorId, listingId])
+  @@index([subjectId])
 }
