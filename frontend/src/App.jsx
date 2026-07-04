@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import Wishlist from './pages/Wishlist'
 import ListingDetail from './pages/ListingDetails'
 import Listings from './pages/Listings'
 import Checkout from './pages/Checkout'
@@ -17,7 +18,9 @@ export default function App() {
         <Route path="/listings" element={<Listings />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/profile" element={<SellerProfile />} />
+        <Route path="/wishlist" element={<Wishlist />} />
       </Routes>
     </BrowserRouter>
   )
 }
+
