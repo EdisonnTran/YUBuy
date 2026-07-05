@@ -124,8 +124,14 @@ export default function Listings() {
           </h2>
         </div>
 
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+     <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
           <span style={{ color: '#CC0000', fontWeight: 700 }}>Browse</span>
+          <span
+            style={{ color: '#aaaaaa', fontWeight: 600, cursor: 'pointer' }}
+            onClick={() => navigate('/wishlist')}
+          >
+            Wishlist
+          </span>
           <button
             type="button"
             style={{
