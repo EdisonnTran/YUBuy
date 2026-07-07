@@ -3,6 +3,8 @@ import cors from 'cors'
 import express from 'express'
 
 import wishlistRouter from './routes/wishlist.js'
+import { userExampleRouter } from './api/user_example/UserExampleRouter.js'
+import { categoryRouter } from './api/category/CategoryRouter.js'
 
 const app = express()
 
@@ -15,6 +17,8 @@ app.get('/', (req, res) => res.send('YUBuy API is running'))
 
 // Feature routes
 app.use('/api/wishlist', wishlistRouter)
+app.use('/api/test', userExampleRouter)
+app.use('/api/category', categoryRouter)
 
 const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {

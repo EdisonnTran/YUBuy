@@ -115,3 +115,9 @@ model Rating {
   @@unique([authorId, listingId])
   @@index([subjectId])
 }
+
+model UserTest {
+  id        String  @id @default(cuid())
+  username  String
+  password  String
+}
