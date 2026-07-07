@@ -1,0 +1,29 @@
+import prisma from '../../db/db.js'
+
+export class ListingService {
+    
+    getAll = async () => {
+        return await prisma.listing.findMany()
+    }
+
+    getOne = async (listing_id) => {
+        return await prisma.listing.findUnique({
+            where: {id: listing_id}
+        })
+    }
+
+    createOne = async (payload) => {
+        await prisma.listing.create({data: {
+            payload
+        }})
+    }
+
+    deleteOne = async (listing_id) => {
+        return await prisma.listing.delete({
+            where: {id: listing_id}
+        })
+    }
+
+}
+
+export const listingService = new listingService();

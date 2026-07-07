@@ -7,6 +7,7 @@ import { userExampleRouter } from './api/user_example/UserExampleRouter.js'
 import { categoryRouter } from './api/category/CategoryRouter.js'
 import { imageRouter } from './api/image/ImageRouter.js'
 import { userRouter } from './api/user/UserRouter.js'
+import { listingRouter } from './api/listing/ListingRouter.js'
 
 const app = express()
 
@@ -23,6 +24,7 @@ app.use('/api/test', userExampleRouter)
 app.use('/api/category', categoryRouter)
 app.use('/api/image', imageRouter)
 app.use('/api/user', userRouter)
+app.use('/api/listing', listingRouter)
 
 const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
