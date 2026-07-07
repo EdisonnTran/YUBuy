@@ -26,4 +26,4 @@ export class ListingService {
 
 }
 
-export const listingService = new listingService();
+export const listingService = new ListingService();

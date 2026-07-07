@@ -8,6 +8,8 @@ import { categoryRouter } from './api/category/CategoryRouter.js'
 import { imageRouter } from './api/image/ImageRouter.js'
 import { userRouter } from './api/user/UserRouter.js'
 import { listingRouter } from './api/listing/ListingRouter.js'
+import { messageRouter } from './api/message/MessageRouter.js'
+import { ratingRouter } from './api/rating/RatingRouter.js'
 
 const app = express()
 
@@ -25,6 +27,8 @@ app.use('/api/category', categoryRouter)
 app.use('/api/image', imageRouter)
 app.use('/api/user', userRouter)
 app.use('/api/listing', listingRouter)
+app.use('/api/message', messageRouter)
+app.use('/api/rating', ratingRouter)
 
 const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
