@@ -13,7 +13,7 @@ export class CategoryController {
 
     getOne = async (_req, res, next) => {
         try {
-            const { category_id } = _req.params
+            const category_id = _req.params.id
 
             const category = await categoryService.getOne(category_id)
             res.status(200).send(category)
