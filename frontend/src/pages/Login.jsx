@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaTag } from 'react-icons/fa'
+import axios from 'axios'
+
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -16,7 +18,7 @@ export default function Login() {
   const [codeError, setCodeError] = useState('')
   const navigate = useNavigate()
 
-  const handleSignIn = () => {
+ const handleSignIn = async () => {
     if (!email || !password) {
       setError('All fields are required')
       return
@@ -31,9 +33,18 @@ export default function Login() {
       return
     }
     setError('')
-    console.log('Sign in clicked', { email, password })
-    // will connect to backend later
-    setShowVerifyCode(true)
+    try {
+      const response = await axios.post('http://localhost:8080/api/user/login', {
+        email,
+        password
+      })
+      console.log('Login successful:', response.data)
+      // connected to backend - shows verify code popup on success
+      setShowVerifyCode(true)
+    } catch (err) {
+      setError('Invalid email or password')
+      console.error(err)
+    }
   }
 
   const handleVerifyCode = () => {
