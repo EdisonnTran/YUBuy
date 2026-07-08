@@ -28,6 +28,13 @@ export class UserService {
             }
         })
     }
+     findByEmail = async (email) => {
+        return await prisma.user.findUnique({ where: { email } })
+    }
+
+    updatePassword = async (email, password) => {
+        await prisma.user.update({ where: { email }, data: { passwordHash: password } })
+    }
 
 }
 
