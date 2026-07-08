@@ -14,7 +14,7 @@ export class UserService {
 
     createOne = async (payload) => {
         await prisma.user.create({data: {
-            email: payload.name,
+            email: payload.email,
             passwordHash: payload.passwordHash,
             name: payload.name
         }})
