@@ -39,7 +39,9 @@ export default function Login() {
         password
       })
       console.log('Login successful:', response.data)
-      // connected to backend - shows verify code popup on success
+      // send verification code to email
+      await axios.post('http://localhost:8080/api/user/send-code', { email })
+      // shows verify code popup on success
       setShowVerifyCode(true)
     } catch (err) {
       setError('Invalid email or password')
@@ -47,15 +49,20 @@ export default function Login() {
     }
   }
 
-  const handleVerifyCode = () => {
+  const handleVerifyCode = async () => {
     if (!code || code.length < 6) {
       setCodeError('Please enter the 6 digit code')
       return
     }
     setCodeError('')
-    console.log('Code verified:', code)
-    // will connect to backend later
-    navigate('/listings')
+    try {
+      await axios.post('http://localhost:8080/api/user/verify-code', { email, code })
+      console.log('Code verified!')
+      navigate('/listings')
+    } catch (err) {
+      setCodeError('Invalid or expired code. Please try again.')
+      console.error(err)
+    }
   }
 
   const handleResetSubmit = () => {
