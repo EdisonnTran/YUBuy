@@ -1,4 +1,8 @@
 import { userService } from "./UserService.js";
+import { sendEmail } from '../../utils/email.js'
+
+const resetTokens = {}
+const verificationCodes = {}
 
 export class UserController {
     getAll = async (_req, res, next) => {
@@ -45,7 +49,8 @@ export class UserController {
         }
         try {
             const serviceResponse = await userService.verifyOne(payload)
-            if (serviceResponse) return true
+            if (serviceResponse) res.status(200).send(serviceResponse)
+            else res.status(401).send({ message: 'Invalid credentials' })
             // if (serviceResponse) {
             //     _req.session.save(() => {
             //         _req.session.email = serviceResponse.responseObject.email
@@ -59,6 +64,7 @@ export class UserController {
             next(error)
         }
     }
+    
 
     logout = async (_req, res, next) => {
         if (_req.session.user_id) {
@@ -76,6 +82,51 @@ export class UserController {
             res.send({ loggedIn: false })
         }
     }
+    forgotPassword = async (_req, res, next) => {
+        try {
+            const { email } = _req.body
+            const user = await userService.findByEmail(email)
+            if (!user) return res.status(404).send({ message: 'User not found' })
+            const token = Math.random().toString(36).substring(2, 15)
+            resetTokens[token] = { email, expiry: Date.now() + 3600000 }
+            const resetLink = `http://localhost:5173/reset-password?token=${token}`
+            await sendEmail(email, 'Reset Your YUBuy Password', `Hi there,\n\nClick the link below to reset your password:\n\n${resetLink}\n\nThis link expires in 1 hour.\n\nIf you didn't request this, please ignore this email.\n\nThe YUBuy Team`)
+            res.status(200).send({ message: 'Reset link sent' })
+        } catch (error) { next(error) }
+    }
+    resetPassword = async (_req, res, next) => {
+        try {
+            const { token, password } = _req.body
+            const data = resetTokens[token]
+            if (!data) return res.status(400).send({ message: 'Invalid token' })
+            if (Date.now() > data.expiry) return res.status(400).send({ message: 'Token expired' })
+            await userService.updatePassword(data.email, password)
+            delete resetTokens[token]
+            res.status(200).send({ message: 'Password reset successful' })
+        } catch (error) { next(error) }
+    }
+
+    sendVerificationCode = async (_req, res, next) => {
+        try {
+            const { email } = _req.body
+            const code = Math.floor(100000 + Math.random() * 900000).toString()
+            verificationCodes[email] = { code, expiry: Date.now() + 600000 }
+            await sendEmail(email, 'Your YUBuy Verification Code', `Hi there,\n\nYour YUBuy verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, please ignore this email.\n\nThe YUBuy Team`)
+            res.status(200).send({ message: 'Code sent' })
+        } catch (error) { next(error) }
+    }
+     verifyCode = async (_req, res, next) => {
+        try {
+            const { email, code } = _req.body
+            const data = verificationCodes[email]
+            if (!data) return res.status(400).send({ message: 'No code found' })
+            if (Date.now() > data.expiry) return res.status(400).send({ message: 'Code expired' })
+            if (data.code !== code) return res.status(400).send({ message: 'Invalid code' })
+            delete verificationCodes[email]
+            res.status(200).send({ message: 'Code verified' })
+        } catch (error) { next(error) }
+    }
+
 }
 
 export const userController = new UserController()
