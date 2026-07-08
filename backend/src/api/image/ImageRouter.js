@@ -9,5 +9,5 @@ imageRouter.get('/', imageController.getAll)
 // GET: retrieve an image by its id
 imageRouter.get('/:id', imageController.getOne)
 
-// POST: create an image given an image URL
+// POST: create an image given an image URL, and listingId
 imageRouter.post('/', imageController.createOne)

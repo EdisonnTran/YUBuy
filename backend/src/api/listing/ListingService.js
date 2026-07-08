@@ -12,6 +12,18 @@ export class ListingService {
         })
     }
 
+    getByCategory = async (category_id) => {
+        return await prisma.listing.findMany({
+            where: {categoryId: category_id}
+        })
+    }
+
+    getBySeller = async (seller_id) => {
+        return await prisma.listing.findMany({
+            where: {sellerId: seller_id}
+        })
+    }
+
     createOne = async (payload) => {
         await prisma.listing.create({data: {
             payload
