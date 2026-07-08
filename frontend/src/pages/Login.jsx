@@ -65,7 +65,7 @@ export default function Login() {
     }
   }
 
-  const handleResetSubmit = () => {
+  const handleResetSubmit = async () => {
     if (!resetEmail) {
       setResetError('Please enter your email')
       return
@@ -76,9 +76,13 @@ export default function Login() {
       return
     }
     setResetError('')
-    setResetSubmitted(true)
-    console.log('Reset link sent to:', resetEmail)
-    // will connect to backend later
+    try {
+      await axios.post('http://localhost:8080/api/user/forgot-password', { email: resetEmail })
+      setResetSubmitted(true)
+    } catch (err) {
+      setResetError('Email not found. Please try again.')
+      console.error(err)
+    }
   }
 
   const closePopup = () => {
@@ -108,8 +112,7 @@ export default function Login() {
             />
             {codeError && <p style={{ color: '#ff4444', fontSize: '13px', marginTop: '8px' }}>{codeError}</p>}
             <button onClick={handleVerifyCode} style={{ marginTop: '24px', width: '100%', padding: '14px', backgroundColor: '#CC0000', color: 'white', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '500', cursor: 'pointer' }}>Verify</button>
-            <p style={{ color: '#aaaaaa', fontSize: '13px', marginTop: '16px', textAlign: 'center' }}>Didn't get it? <span onClick={() => console.log('resend code')} style={{ color: '#CC0000', cursor: 'pointer' }}>Resend code</span></p>
-          </div>
+            <p style={{ color: '#aaaaaa', fontSize: '13px', marginTop: '16px', textAlign: 'center' }}>Didn't get it? <span onClick={async () => { await axios.post('http://localhost:8080/api/user/send-code', { email }); console.log('code resent!') }} style={{ color: '#CC0000', cursor: 'pointer' }}>Resend code</span></p>          </div>
         </div>
       )}
 
