@@ -6,6 +6,7 @@ import ListingDetail from './pages/ListingDetails'
 import Listings from './pages/Listings'
 import Checkout from './pages/Checkout'
 import SellerProfile from './pages/SellerProfile'
+import Admin from './pages/Admin'
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/profile" element={<SellerProfile />} />
         <Route path="/wishlist" element={<Wishlist />} />
+        <Route path="/admin" element={<Admin />} />
       </Routes>
     </BrowserRouter>
   )
