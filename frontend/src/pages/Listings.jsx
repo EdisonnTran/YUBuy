@@ -284,11 +284,13 @@ export default function Listings() {
               return (
                 <article
                   key={listing.id}
+                  onClick={() => navigate(`/listings/${listing.id}`)}
                   style={{
                     overflow: 'hidden',
                     border: '1px solid #454545',
                     borderRadius: '14px',
                     backgroundColor: '#333333',
+                    cursor: 'pointer',
                   }}
                 >
                   <div
@@ -338,17 +340,27 @@ export default function Listings() {
                       <strong style={{ color: 'white', fontSize: '22px' }}>
                         ${listing.price}
                       </strong>
-                      <span
-                        style={{
-                          padding: '5px 9px',
-                          borderRadius: '6px',
-                          backgroundColor: 'rgba(204,0,0,0.18)',
-                          color: '#ff7777',
-                          fontSize: '12px',
-                        }}
-                      >
-                        {listing.condition}
-                      </span>
+                        <span
+                          style={{
+                            padding: '5px 9px',
+                            borderRadius: '6px',
+                            backgroundColor:
+                              ['like new', 'excellent'].includes(listing.condition.toLowerCase())
+                                ? 'rgba(34, 197, 94, 0.15)'
+                                : ['good', 'fair'].includes(listing.condition.toLowerCase())
+                                ? 'rgba(234, 179, 8, 0.15)'
+                                : 'rgba(204, 0, 0, 0.15)',
+                            color:
+                              ['like new', 'excellent'].includes(listing.condition.toLowerCase())
+                                ? '#22c55e'
+                                : ['good', 'fair'].includes(listing.condition.toLowerCase())
+                                ? '#eab308'
+                                : '#ff7777',
+                            fontSize: '12px',
+                          }}
+                        >
+                          {listing.condition}
+                        </span>
                     </div>
                     <p
                       style={{
