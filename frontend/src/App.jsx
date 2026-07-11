@@ -6,7 +6,13 @@ import ListingDetail from './pages/ListingDetails'
 import Listings from './pages/Listings'
 import Checkout from './pages/Checkout'
 import SellerProfile from './pages/SellerProfile'
+<<<<<<< HEAD
 import Admin from './pages/Admin'
+=======
+import Inbox from './pages/Inbox'
+
+
+>>>>>>> 3a926303b4a1a7bc7d6d5a05205f9adddd63097a
 
 export default function App() {
   return (
@@ -20,7 +26,11 @@ export default function App() {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/profile" element={<SellerProfile />} />
         <Route path="/wishlist" element={<Wishlist />} />
+<<<<<<< HEAD
         <Route path="/admin" element={<Admin />} />
+=======
+        <Route path="/inbox" element={<Inbox />} />
+>>>>>>> 3a926303b4a1a7bc7d6d5a05205f9adddd63097a
       </Routes>
     </BrowserRouter>
   )

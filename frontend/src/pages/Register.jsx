@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaTag } from 'react-icons/fa'
+import axios from 'axios'
 
 export default function Register() {
   const [name, setName] = useState('')
@@ -10,7 +11,7 @@ export default function Register() {
   const [error, setError] = useState('')
   const navigate = useNavigate()
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!name || !email || !password) {
       setError('All fields are required')
       return
@@ -27,9 +28,19 @@ export default function Register() {
       return
     }
     setError('')
-    console.log('Register clicked', { name, email, password })
-    // will connect to backend later
-    navigate('/listings')
+    try {
+      const response = await axios.post('http://localhost:8080/api/user', {
+        name,
+        email,
+        password
+      })
+      console.log('Register successful:', response.data)
+      // connected to backend, navigates to listings on success
+      navigate('/listings')
+    } catch (err) {
+      setError('Registration failed. Please try again.')
+      console.error(err)
+    }
   }
 
   // Left side for registration fields

@@ -10,6 +10,21 @@ export class UserExampleController {
             next(error);
         }
     }
+
+    addUser = async (_req, res, next) => {
+        try {
+            const payload = {
+                username: _req.body.username,
+                password: _req.body.password,
+            }
+
+            const serviceResponse = await userExampleService.addUser(payload)
+            res.status(200).send(serviceResponse)
+        }
+        catch (error) {
+            next(error);
+        }
+    }
 }
 
 export const userExampleController = new UserExampleController()

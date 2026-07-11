@@ -1,28 +1,94 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { FaTag, FaUser, FaStar, FaMapMarkerAlt, FaEnvelope, FaImage } from 'react-icons/fa'
+import { FaBook, FaChair, FaLaptop } from 'react-icons/fa'
 
 // Placeholder data — will be replaced with real API call later
-const mockListing = {
-  title: 'Calculus Textbook – 10th Edition',
-  price: 45,
-  category: 'Textbooks',
-  proximityTag: 'Keele Campus',
-  condition: 'Like New', // can be 'Like New', 'Good', or 'Fair'
-  status: 'available',
-  postedDate: 'June 24, 2026',
-  description: 'Barely used calculus textbook from first year. No highlights or annotations. Perfect condition.',
-  images: [],
-  seller: {
-    name: 'Jane D.',
-    rating: 4.3,
-    totalRatings: 12,
+const mockListings = [
+  {
+    id: 1,
+    title: 'Introduction to Psychology',
+    price: 45,
+    category: 'Textbooks',
+    proximityTag: 'Keele Campus',
+    condition: 'Like New',
+    status: 'available',
+    postedDate: 'June 24, 2026',
+    description: 'Great introductory psychology textbook. Barely used, no highlights.',
+    images: [],
+    seller: { name: 'Jane D.', rating: 4.3, totalRatings: 12 },
   },
-}
+  {
+    id: 2,
+    title: 'MacBook Air M1',
+    price: 650,
+    category: 'Electronics',
+    proximityTag: 'York Lanes',
+    condition: 'Good',
+    status: 'available',
+    postedDate: 'June 22, 2026',
+    description: 'MacBook Air M1 in great condition. Battery health at 91%. Comes with charger.',
+    images: [],
+    seller: { name: 'Mark T.', rating: 4.7, totalRatings: 8 },
+  },
+  {
+    id: 3,
+    title: 'Ergonomic Desk Chair',
+    price: 80,
+    category: 'Furniture',
+    proximityTag: 'The Village',
+    condition: 'Good',
+    status: 'available',
+    postedDate: 'June 20, 2026',
+    description: 'Comfortable ergonomic desk chair, perfect for long study sessions.',
+    images: [],
+    seller: { name: 'Alex K.', rating: 4.1, totalRatings: 5 },
+  },
+  {
+    id: 4,
+    title: 'Calculus: Early Transcendentals',
+    price: 55,
+    category: 'Textbooks',
+    proximityTag: 'Keele Campus',
+    condition: 'Like New',
+    status: 'available',
+    postedDate: 'June 19, 2026',
+    description: 'Calculus Early Transcendentals, barely used. No writing or highlights inside.',
+    images: [],
+    seller: { name: 'Sara M.', rating: 4.5, totalRatings: 20 },
+  },
+  {
+    id: 5,
+    title: 'Noise-Cancelling Headphones',
+    price: 95,
+    category: 'Electronics',
+    proximityTag: 'Glendon Campus',
+    condition: 'Excellent',
+    status: 'available',
+    postedDate: 'June 18, 2026',
+    description: 'Sony noise-cancelling headphones. Perfect for studying in loud environments.',
+    images: [],
+    seller: { name: 'Jane D.', rating: 4.3, totalRatings: 12 },
+  },
+  {
+    id: 6,
+    title: 'Compact Study Desk',
+    price: 60,
+    category: 'Furniture',
+    proximityTag: 'The Village',
+    condition: 'Used',
+    status: 'available',
+    postedDate: 'June 17, 2026',
+    description: 'Small compact desk, great for dorm rooms. Some minor scratches on surface.',
+    images: [],
+    seller: { name: 'Mark T.', rating: 4.7, totalRatings: 8 },
+  },
+]
 
 export default function ListingDetail() {
   const navigate = useNavigate()
-  const listing = mockListing
+  const { id } = useParams()
+  const listing = mockListings.find(l => l.id === parseInt(id)) || mockListings[0]
   const [activeImg, setActiveImg] = useState(0)
 
   return (
@@ -118,16 +184,22 @@ export default function ListingDetail() {
             {listing.proximityTag}
           </span>
           <span style={{
-            ...tagStyle,
-            backgroundColor: listing.condition === 'Like New' ? 'rgba(34, 197, 94, 0.15)' :
-                             listing.condition === 'Good' ? 'rgba(234, 179, 8, 0.15)' :
-                             'rgba(204, 0, 0, 0.15)',
-            color: listing.condition === 'Like New' ? '#22c55e' :
-                   listing.condition === 'Good' ? '#eab308' :
-                   '#CC0000',
-          }}>
-            {listing.condition}
-          </span>
+              ...tagStyle,
+              backgroundColor:
+                ['like new', 'excellent'].includes(listing.condition.toLowerCase())
+                  ? 'rgba(34, 197, 94, 0.15)'
+                  : ['good', 'fair'].includes(listing.condition.toLowerCase())
+                  ? 'rgba(234, 179, 8, 0.15)'
+                  : 'rgba(204, 0, 0, 0.15)',
+              color:
+                ['like new', 'excellent'].includes(listing.condition.toLowerCase())
+                  ? '#22c55e'
+                  : ['good', 'fair'].includes(listing.condition.toLowerCase())
+                  ? '#eab308'
+                  : '#CC0000',
+            }}>
+              {listing.condition}
+            </span>
         </div>
 
         {/* Description */}
@@ -176,7 +248,7 @@ export default function ListingDetail() {
 
         {/* Message button */}
         <button
-          onClick={() => console.log('Message seller — connect to backend later')}
+          onClick={() => navigate('/inbox')}
           style={{
             padding: '14px',
             backgroundColor: '#CC0000',
@@ -197,7 +269,7 @@ export default function ListingDetail() {
         </button>
 
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/listings')}
           style={{
             padding: '14px',
             backgroundColor: 'transparent',
