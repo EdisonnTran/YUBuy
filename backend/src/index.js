@@ -1,7 +1,6 @@
 import 'dotenv/config'
 import cors from 'cors'
 import express from 'express'
-
 import wishlistRouter from './routes/wishlist.js'
 import { userExampleRouter } from './api/user_example/UserExampleRouter.js'
 import { categoryRouter } from './api/category/CategoryRouter.js'
@@ -10,6 +9,7 @@ import { userRouter } from './api/user/UserRouter.js'
 import { listingRouter } from './api/listing/ListingRouter.js'
 import { messageRouter } from './api/message/MessageRouter.js'
 import { ratingRouter } from './api/rating/RatingRouter.js'
+import userRouter from './api/user/UserRouter.js'
 
 const app = express()
 
@@ -29,6 +29,7 @@ app.use('/api/user', userRouter)
 app.use('/api/listing', listingRouter)
 app.use('/api/message', messageRouter)
 app.use('/api/rating', ratingRouter)
+app.use('/api/user', userRouter)
 
 const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
