@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   FaBook,
   FaChair,
+  FaHeart,
   FaLaptop,
   FaSearch,
   FaShoppingBag,
@@ -69,10 +70,28 @@ const listings = [
 
 const categories = ['All', 'Textbooks', 'Electronics', 'Furniture']
 
+// TODO: replace with the real logged-in user's id once auth is wired up.
+// This is Alice's id from the seed data, used for local testing.
+const CURRENT_USER_ID = 'cmr2ep0vr0003xprwfbwag2x7'
+
 export default function Listings() {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
   const navigate = useNavigate()
+
+  async function handleAddToWishlist(listingId) {
+    try {
+      const response = await fetch('http://localhost:3000/api/wishlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: CURRENT_USER_ID, listingId }),
+      })
+      if (!response.ok) throw new Error(`Request failed: ${response.status}`)
+      alert('Added to wishlist!')
+    } catch (err) {
+      alert('Could not add to wishlist. (This is expected with mock data — real listings will work.)')
+    }
+  }
 
   const filteredListings = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -124,8 +143,14 @@ export default function Listings() {
           </h2>
         </div>
 
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+     <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
           <span style={{ color: '#CC0000', fontWeight: 700 }}>Browse</span>
+          <span
+            style={{ color: '#aaaaaa', fontWeight: 600, cursor: 'pointer' }}
+            onClick={() => navigate('/wishlist')}
+          >
+            Wishlist
+          </span>
           <button
             type="button"
             style={{
@@ -286,6 +311,7 @@ export default function Listings() {
                   key={listing.id}
                   onClick={() => navigate(`/listings/${listing.id}`)}
                   style={{
+                    position: 'relative',
                     overflow: 'hidden',
                     border: '1px solid #454545',
                     borderRadius: '14px',
@@ -293,6 +319,30 @@ export default function Listings() {
                     cursor: 'pointer',
                   }}
                 >
+                  <button
+                    type="button"
+                    onClick={() => handleAddToWishlist(listing.id)}
+                    title="Add to wishlist"
+                    style={{
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px',
+                      zIndex: 1,
+                      width: '36px',
+                      height: '36px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: 0,
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(0,0,0,0.55)',
+                      color: 'white',
+                      cursor: 'pointer',
+                    }}
+                  >
+                 <FaHeart />
+                  </button>
+
                   <div
                     style={{
                       height: '155px',
