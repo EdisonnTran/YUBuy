@@ -20,15 +20,7 @@ export class UserService {
         }})
     }
 
-    verifyOne = async (payload) => {
-        return await prisma.user.findUnique({
-            where: {
-                email: payload.email,
-                passwordHash: payload.passwordHash
-            }
-        })
-    }
-     findByEmail = async (email) => {
+    findByEmail = async (email) => {
         return await prisma.user.findUnique({ where: { email } })
     }
 

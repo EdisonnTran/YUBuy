@@ -9,7 +9,6 @@ import { userRouter } from './api/user/UserRouter.js'
 import { listingRouter } from './api/listing/ListingRouter.js'
 import { messageRouter } from './api/message/MessageRouter.js'
 import { ratingRouter } from './api/rating/RatingRouter.js'
-import userRouter from './api/user/UserRouter.js'
 
 const app = express()
 

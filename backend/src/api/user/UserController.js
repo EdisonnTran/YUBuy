@@ -1,10 +1,13 @@
-import { userService } from "./UserService.js";
+import { userService } from "./UserService.js"
 import { sendEmail } from '../../utils/email.js'
+import bcrypt from 'bcrypt'
 
 const resetTokens = {}
 const verificationCodes = {}
 
 export class UserController {
+    #saltRounds = 10
+
     getAll = async (_req, res, next) => {
         try {
             const users = await userService.getAll();
@@ -29,9 +32,10 @@ export class UserController {
 
     createOne = async (_req, res, next) => {
             try {
+                const hashed_password = await bcrypt.hash(_req.body.password, this.#saltRounds)
                 const payload = {
                     email: _req.body.email,
-                    passwordHash: _req.body.password, // Password to be encrypted using bcrypt
+                    passwordHash: hashed_password, // Password to be encrypted using bcrypt
                     name: _req.body.name
                 }
                 const serviceResponse = await userService.createOne(payload)
@@ -43,22 +47,16 @@ export class UserController {
         }
     
     verifyUser = async (_req, res, next) => {
-        const payload = {
-            email: _req.body.email,
-            passwordHash: _req.body.password
-        }
         try {
-            const serviceResponse = await userService.verifyOne(payload)
-            if (serviceResponse) res.status(200).send(serviceResponse)
-            else res.status(401).send({ message: 'Invalid credentials' })
-            // if (serviceResponse) {
-            //     _req.session.save(() => {
-            //         _req.session.email = serviceResponse.responseObject.email
-            //         _req.session.user_id = serviceResponse.responseObject.id
-            //         res.status(200).send(servceResponse)
-            //         console.log("login successful!")
-            //     })
-            // }
+            const serviceResponse = await userService.findByEmail(_req.body.email)
+            if (!serviceResponse) {
+                res.status(401).send({ message: 'User does not exist' })
+            } else if (await bcrypt.compare(_req.body.password, serviceResponse.passwordHash)) {
+                res.status(200).send(serviceResponse)
+            } else {
+                res.status(401).send({ message: 'Incorrect password for user'})
+            }
+                
         }
         catch (error) {
             next(error)
