@@ -30,7 +30,4 @@ app.use('/api/message', messageRouter)
 app.use('/api/rating', ratingRouter)
 app.use('/api/user', userRouter)
 
-const PORT = process.env.PORT || 3000
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`)
-})
+export default app
