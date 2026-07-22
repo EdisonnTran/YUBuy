@@ -21,6 +21,3 @@ listingRouter.post('/', listingController.createOne)
 
 // DELETE: delete a listing given the listing's id
 listingRouter.delete('/', listingController.deleteOne)
-
-// TOOD: PATCH: adds images to a particular listing
-// listingRouter.patch('/:id', listingController.addImage)
