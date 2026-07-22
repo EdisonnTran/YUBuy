@@ -7,7 +7,11 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/server.js",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest -i"
+  },
+  "jest": {
+    "setupFilesAfterEnv": ["<rootDir>/tests/singleton.js"]
   },
   "keywords": [],
   "author": "",
@@ -18,10 +22,14 @@
     "@prisma/client": "^7.8.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "jest": "^30.4.2",
+    "jest-mock-extended": "^4.0.1",
     "nodemailer": "^9.0.3",
-    "pg": "^8.22.0"
+    "pg": "^8.22.0",
+    "prisma-mock": "^1.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14",
