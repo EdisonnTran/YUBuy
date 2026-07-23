@@ -13,7 +13,7 @@ export class ImageService {
     }
 
     createOne = async (payload) => {
-        await prisma.image.create({data: {
+        return await prisma.image.create({data: {
             url: payload.image_url,
             listingId: payload.listingId
         }})
