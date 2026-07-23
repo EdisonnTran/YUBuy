@@ -1,5 +1,3 @@
-// Design considerations based on the SellerProfile page for continuity.  
-
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FaTag, FaBoxOpen, FaDollarSign, FaMapMarkerAlt, FaClipboardList } from 'react-icons/fa'
@@ -100,22 +98,6 @@ export default function SellItem() {
             <p style={{ color: 'white', fontSize: '20px', fontWeight: '600', margin: '0 0 4px' }}>New Listing</p>
             <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>Fill in the details to post your item</p>
           </div>
-        </div>
-
-        {/* Tips */}
-        <div style={{ backgroundColor: '#1a1a1a', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <p style={{ color: '#aaaaaa', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.8px', margin: 0 }}>Tips</p>
-          <div style={{ borderTop: '1px solid #2a2a2a' }} />
-          {[
-            'Use a clear, specific title',
-            'Be honest about condition',
-            'Price competitively',
-            'Pick the closest campus location',
-          ].map((tip, i) => (
-            <p key={i} style={{ color: '#666', fontSize: '13px', margin: 0 }}>
-              · {tip}
-            </p>
-          ))}
         </div>
 
         <button
