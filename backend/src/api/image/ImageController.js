@@ -26,7 +26,7 @@ export class ImageController {
     createOne = async (_req, res, next) => {
             try {
                 const payload = {
-                    image_url: _req.body.image_url,
+                    url: _req.body.image_url,
                     listingId: _req.body.listingId
                 }
                 const serviceResponse = await imageService.createOne(payload)

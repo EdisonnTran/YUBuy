@@ -15,8 +15,8 @@ export class MessageService {
     }
 
     write = async (payload) => {
-        await prisma.message.create({data: {
-            payload
+        return await prisma.message.create({data: {
+            ...payload
         }})
     }
 
