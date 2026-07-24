@@ -91,7 +91,7 @@ describe('Rating - Tests', () => {
     })
 
     describe('POST /api/rating/', () => {
-        test('should return 200 and create listing', async () => {
+        test('should return 200 and create rating', async () => {
             prismaMock.rating.create.mockImplementation(async ({ data }) => ({
                 id: '1',
                 ...data

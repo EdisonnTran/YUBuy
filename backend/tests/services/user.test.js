@@ -32,11 +32,9 @@ describe('User Service - Unit Tests', () => {
 })
 
 describe('User - Integration Tests', () => {
-    let userService
 
     beforeEach(() => {
         jest.clearAllMocks()
-        userService = new UserService()
     })
 
     describe('GET /api/user/', () => {

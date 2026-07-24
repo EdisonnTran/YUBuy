@@ -51,7 +51,7 @@ export class ListingService {
 
     createOne = async (payload) => {
         return await prisma.listing.create({data: {
-            payload
+            ...payload
         }})
     }
 
