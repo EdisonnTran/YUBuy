@@ -1,7 +1,26 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FaTag, FaUser, FaStar, FaMapMarkerAlt, FaEnvelope, FaImage } from 'react-icons/fa'
-import { FaBook, FaChair, FaLaptop } from 'react-icons/fa'
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
+import L from 'leaflet'
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
+import markerIcon from 'leaflet/dist/images/marker-icon.png'
+import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+
+delete L.Icon.Default.prototype._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+})
+
+const locationCoordinates = {
+  'Keele Campus':   { lat: 43.7735, lng: -79.5019 },
+  'Glendon Campus': { lat: 43.7360, lng: -79.3758 },
+  'York Lanes':     { lat: 43.7738, lng: -79.5023 },
+  'The Village':    { lat: 43.7745, lng: -79.4998 },
+}
 
 // Placeholder data — will be replaced with real API call later
 const mockListings = [
@@ -90,6 +109,7 @@ export default function ListingDetail() {
   const { id } = useParams()
   const listing = mockListings.find(l => l.id === parseInt(id)) || mockListings[0]
   const [activeImg, setActiveImg] = useState(0)
+  const coords = locationCoordinates[listing.proximityTag]
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#1a1a1a' }}>
@@ -184,22 +204,22 @@ export default function ListingDetail() {
             {listing.proximityTag}
           </span>
           <span style={{
-              ...tagStyle,
-              backgroundColor:
-                ['like new', 'excellent'].includes(listing.condition.toLowerCase())
-                  ? 'rgba(34, 197, 94, 0.15)'
-                  : ['good', 'fair'].includes(listing.condition.toLowerCase())
-                  ? 'rgba(234, 179, 8, 0.15)'
-                  : 'rgba(204, 0, 0, 0.15)',
-              color:
-                ['like new', 'excellent'].includes(listing.condition.toLowerCase())
-                  ? '#22c55e'
-                  : ['good', 'fair'].includes(listing.condition.toLowerCase())
-                  ? '#eab308'
-                  : '#CC0000',
-            }}>
-              {listing.condition}
-            </span>
+            ...tagStyle,
+            backgroundColor:
+              ['like new', 'excellent'].includes(listing.condition.toLowerCase())
+                ? 'rgba(34, 197, 94, 0.15)'
+                : ['good', 'fair'].includes(listing.condition.toLowerCase())
+                ? 'rgba(234, 179, 8, 0.15)'
+                : 'rgba(204, 0, 0, 0.15)',
+            color:
+              ['like new', 'excellent'].includes(listing.condition.toLowerCase())
+                ? '#22c55e'
+                : ['good', 'fair'].includes(listing.condition.toLowerCase())
+                ? '#eab308'
+                : '#CC0000',
+          }}>
+            {listing.condition}
+          </span>
         </div>
 
         {/* Description */}
@@ -209,6 +229,29 @@ export default function ListingDetail() {
             {listing.description}
           </p>
         </div>
+
+        {/* Map */}
+        {coords && (
+          <div>
+            <h2 style={{ color: 'white', fontSize: '16px', fontWeight: '600', margin: '0 0 10px' }}>Pickup Location</h2>
+            <MapContainer
+              center={[coords.lat, coords.lng]}
+              zoom={15}
+              style={{ height: '260px', width: '100%', borderRadius: '12px' }}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <Marker position={[coords.lat, coords.lng]}>
+                <Popup>
+                  <strong>{listing.title}</strong><br />
+                  {listing.proximityTag}
+                </Popup>
+              </Marker>
+            </MapContainer>
+          </div>
+        )}
 
       </div>
 

@@ -3,7 +3,7 @@ import prisma from '../../db/db.js'
 export class RatingService {
 
     getByListing = async (id) => {
-        return await prisma.rating.findMany({
+        return await prisma.rating.findUnique({
             where: {listingId: id}
         })
     }
@@ -22,7 +22,7 @@ export class RatingService {
 
     createOne = async (payload) => {
         return await prisma.rating.create({data: {
-            payload
+            ...payload
         }})
     }
 

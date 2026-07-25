@@ -2,6 +2,8 @@ import 'dotenv/config'
 import cors from 'cors'
 import express from 'express'
 import { wishlistRouter } from './api/wishlist/WishlistRouter.js'
+import session from 'express-session'
+import wishlistRouter from './routes/wishlist.js'
 import { userExampleRouter } from './api/user_example/UserExampleRouter.js'
 import { categoryRouter } from './api/category/CategoryRouter.js'
 import { imageRouter } from './api/image/ImageRouter.js'
@@ -15,6 +17,19 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+app.use(
+    session({
+        secret: process.env.SESSION_SECRET,
+        resave: false,
+        saveUninitialized: true,
+        cookie: {
+        httpOnly: true,
+        secure: false,
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: 'lax',
+        }
+    })
+)
 
 // Health check
 app.get('/', (req, res) => res.send('YUBuy API is running'))
