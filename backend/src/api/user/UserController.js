@@ -11,7 +11,13 @@ export class UserController {
     getAll = async (_req, res, next) => {
         try {
             const users = await userService.getAll();
-            res.status(200).send(users)
+            if (users.length === 0)
+            {
+                res.status(201).send(users)
+            } else 
+            {
+                res.status(200).send(users)
+            }
         }
         catch (error) { 
             next(error);
@@ -21,9 +27,14 @@ export class UserController {
     getOne = async (_req, res, next) => {
         try {
             const user_id = _req.params.id
-
             const user = await userService.getOne(user_id)
-            res.status(200).send(user)
+            if (user === null)
+            {
+                res.status(201).send(user)
+            } else 
+            {
+                res.status(200).send(user)
+            }
         }
         catch (error) {
             next(error);
@@ -35,14 +46,18 @@ export class UserController {
                 const hashed_password = await bcrypt.hash(_req.body.password, this.#saltRounds)
                 const payload = {
                     email: _req.body.email,
-                    passwordHash: hashed_password, // Password to be encrypted using bcrypt
+                    passwordHash: hashed_password,
                     name: _req.body.name
                 }
                 const serviceResponse = await userService.createOne(payload)
                 res.status(200).send(serviceResponse)
             }
             catch (error) {
-                next(error)
+                if (error.code === 'P2002') {
+                    return res.status(500).json({ error: 'Email already in use' })
+                } else {
+                    next(error)
+                }
             }
         }
     
@@ -52,32 +67,38 @@ export class UserController {
             if (!serviceResponse) {
                 res.status(401).send({ message: 'User does not exist' })
             } else if (await bcrypt.compare(_req.body.password, serviceResponse.passwordHash)) {
-                res.status(200).send(serviceResponse)
+                _req.session.save((err) => {
+                    if (err) {
+                        res.status(500).send("Error saving session")
+                    }
+                    _req.session.email = _req.body.email
+                    _req.session.user_id = serviceResponse.id
+                    _req.session.loggedIn = true
+                    res.status(200).send(serviceResponse)
+                })
             } else {
                 res.status(401).send({ message: 'Incorrect password for user'})
             }
-                
         }
         catch (error) {
             next(error)
         }
     }
-    
 
     logout = async (_req, res, next) => {
-        if (_req.session.user_id) {
+        if (_req.session && _req.session.user_id) {
             _req.session.destroy((err) => {
                 if (err) {
                     return res.status(500).send({ message: "Could not log out "})
                 }
-                return res.send({
+                return res.status(200).send({
                     loggedIn: false,
                     email: undefined,
-                    id: undefined,
+                    user_id: undefined,
                 })
             })
         } else {
-            res.send({ loggedIn: false })
+            res.status(201).send({ loggedIn: false })
         }
     }
     forgotPassword = async (_req, res, next) => {

@@ -49,7 +49,7 @@ export class RatingController {
             }
 
             const serviceResponse = await ratingService.createOne(payload)
-            res.status(200).send(rating)
+            res.status(200).send(serviceResponse)
         }
         catch (error) {
             next(error)

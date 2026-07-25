@@ -13,7 +13,7 @@ export class CategoryService {
     }
 
     createOne = async (category_name) => {
-        await prisma.category.create({data: {
+        return await prisma.category.create({data: {
             name: category_name
         }})
     }
