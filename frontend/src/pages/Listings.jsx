@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import ListingsMap from '../components/ListingsMap'
 import {
   FaBook,
   FaChair,
@@ -242,6 +243,14 @@ export default function Listings() {
       </section>
 
       <main style={{ padding: '38px 48px 60px' }}>
+        
+        <div style={{ marginBottom: '32px' }}>
+          <h2 style={{ color: 'white', fontSize: '20px', fontWeight: '700', margin: '0 0 16px' }}>
+            Listings near you
+          </h2>
+          <ListingsMap listings={filteredListings} />
+        </div>
+        
         <div
           style={{
             display: 'flex',
@@ -440,6 +449,8 @@ export default function Listings() {
           </div>
         )}
       </main>
+
+      
     </div>
   )
 }
