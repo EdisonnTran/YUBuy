@@ -12,7 +12,7 @@ import {
 
 // TODO: replace with the real logged-in user's id once auth is wired up.
 // This is Alice's id from the seed data, used for local testing.
-const CURRENT_USER_ID = 'cmr2ep0vr0003xprwfbwag2x7'
+const CURRENT_USER_ID = 'cmrdx326n00039u8ovdrdsv60'
 
 const API_BASE = 'http://localhost:3000'
 

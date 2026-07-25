@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import cors from 'cors'
 import express from 'express'
+import { wishlistRouter } from './api/wishlist/WishlistRouter.js'
 import session from 'express-session'
 import wishlistRouter from './routes/wishlist.js'
 import { userExampleRouter } from './api/user_example/UserExampleRouter.js'
