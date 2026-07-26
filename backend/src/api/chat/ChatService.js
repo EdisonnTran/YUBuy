@@ -2,15 +2,15 @@ import { fileSystemClient } from "../../utils/azureDataLake.js"
 
 export class ChatService {
     
-    appendMessageToLake = async (conversationId, messageData) => {
-        const filePath = `chat/chat_${conversationId}.jsonl`
-        const fileClient = fileSystemClient.getFileClient(filePath)
+    appendMessageToLake = async (chatId, messageData) => {
+       const filePath = `chat/chat_${chatId}.jsonl`
+       const fileClient = fileSystemClient.getFileClient(filePath)
 
         const lineToAppend = JSON.stringify({
             messageId: messageData.id,
             senderId: messageData.senderId,
             text: messageData.text,
-            timestamp: messageData.timestamp || new Date().toISOString(),
+            timestamp: new Date().toISOString(),
             }) + '\n'
 
         const buffer = Buffer.from(lineToAppend, 'utf-8')
@@ -24,8 +24,8 @@ export class ChatService {
         await fileClient.flush(currentPosition + buffer.length)
     }
 
-    getChatHistoryFromLake = async (conversationId) => {
-        const filePath = `chat/chat_${conversationId}.jsonl`
+    getChatHistoryFromLake = async (chatId) => {
+        const filePath = `chat/chat_${chatId}.jsonl`
         const fileClient = fileSystemClient.getFileClient(filePath)
 
         if (!(await fileClient.exists())) {
@@ -33,7 +33,7 @@ export class ChatService {
         }
 
         const downloadResponse = await fileClient.read()
-        const content = await streamToString(downloadResponse.readableStreamBody)
+        const content = await this.streamToString(downloadResponse.readableStreamBody)
         const messages = content.trim().split('\n').filter((line) => line.length > 0).map((line) => JSON.parse(line))
 
         return messages
@@ -46,6 +46,11 @@ export class ChatService {
             readableStream.on('end', () => resolve(chunks.join('')))
             readableStream.on('error', reject)
         })
+    }
+
+    getFileClient = async (chatId) => {
+        const filePath = `chat/chat_${chatId}.jsonl`
+        return fileSystemClient.getFileClient(filePath)
     }
 }
 

@@ -14,7 +14,7 @@ export class ChatController {
     sendMessage = async (_req, res, next) => {
         try {
             const { senderId, text } = _req.body
-            const message = { id: Date.now().toString(), senderId, text }
+            const message = { senderId, text }
 
             await chatService.appendMessageToLake(_req.params.chatId, message)
             return res.status(200).send(message)
