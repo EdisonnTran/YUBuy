@@ -62,6 +62,8 @@ The following environment variables are required to run the backend application.
 | -------- | ----------- |
 | `DATABASE_URL` | The connection string to your Prisma ORM. |
 | `PORT` | The port your server will listen on. |
+| `SESSION_SECRET` | A session secret key (can be any value) |
+| `AZURE_STORAGE_CONNECTION_STRING` | The connection string to your Azure storrage account for ADLS |
 
 ## Database Setup
 
