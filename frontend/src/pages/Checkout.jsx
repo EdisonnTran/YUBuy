@@ -18,6 +18,12 @@ const inputStyle = {
   boxSizing: 'border-box',
 }
 
+const errorStyle = {
+  color: '#ffaaaa',
+  fontSize: '12px',
+  marginTop: '4px',
+}
+
 const fieldGroupStyle = {
   display: 'flex',
   flexDirection: 'column',
@@ -40,39 +46,106 @@ export default function Checkout() {
   const [expirationDate, setExpirationDate] = useState('')
   const [securityCode, setSecurityCode] = useState('')
 
+  // errors
+  const [errors, setErrors] = useState({})
+
   const navigate = useNavigate()
 
+  // -- input handlers --
+
+  const handleNameInput = (setter) => (e) => {
+    // letters, spaces, hyphens only (covers names like "Mary-Jane")
+    const value = e.target.value
+    if (/^[a-zA-Z\s\-]{0,50}$/.test(value)) {
+      setter(value)
+    }
+  }
+
+  const handlePostalCode = (e) => {
+    // Canadian format: A1A 1A1 — allow partial input as user types
+    const value = e.target.value.toUpperCase()
+    if (/^[A-Z]?\d?[A-Z]?\s?\d?[A-Z]?\d?$/.test(value)) {
+      setPostalCode(value)
+    }
+  }
+
+  const handlePhoneNumber = (e) => {
+    const value = e.target.value
+    if (/^\d{0,10}$/.test(value)) {
+      setPhoneNumber(value)
+    }
+  }
+
+  const handleCreditCardNumber = (e) => {
+    const value = e.target.value
+    if (/^\d{0,16}$/.test(value)) {
+      setCardNumber(value)
+    }
+  }
+
+  const handleExpirationDate = (e) => {
+    const value = e.target.value
+    if (/^\d{0,2}\/?\d{0,2}$/.test(value)) {
+      setExpirationDate(value)
+    }
+  }
+
+  const handleSecurityCode = (e) => {
+    const value = e.target.value
+    if (/^\d{0,3}$/.test(value)) {
+      setSecurityCode(value)
+    }
+  }
+
+  // -- validation on submit --
+
+  const validate = () => {
+    const newErrors = {}
+
+    if (!firstName.trim())                        newErrors.firstName    = 'First name is required'
+    if (!lastName.trim())                         newErrors.lastName     = 'Last name is required'
+    if (!streetName.trim())                       newErrors.streetName   = 'Street name is required'
+    if (!city.trim())                             newErrors.city         = 'City is required'
+    if (!country.trim())                          newErrors.country      = 'Country is required'
+
+    // Canadian postal code: A1A 1A1
+    if (!/^[A-Z]\d[A-Z]\s?\d[A-Z]\d$/.test(postalCode))
+      newErrors.postalCode = 'Enter a valid postal code (e.g. A1A 1A1)'
+
+    if (phoneNumber.length !== 10)
+      newErrors.phoneNumber = 'Phone number must be 10 digits'
+
+    if (cardNumber.length !== 16)
+      newErrors.cardNumber = 'Card number must be 16 digits'
+
+    // expiration: MM/YY where MM is 01-12
+    if (!/^\d{2}\/\d{2}$/.test(expirationDate)) {
+      newErrors.expirationDate = 'Enter a valid expiration date (MM/YY)'
+    } else {
+      const month = parseInt(expirationDate.slice(0, 2))
+      if (month < 1 || month > 12)
+        newErrors.expirationDate = 'Month must be between 01 and 12'
+    }
+
+    if (securityCode.length !== 3)
+      newErrors.securityCode = 'Security code must be 3 digits'
+
+    return newErrors
+  }
+
   const handleCheckout = () => {
-    console.log('Checkout clicked', {
+    const newErrors = validate()
+    setErrors(newErrors)
+
+    if (Object.keys(newErrors).length > 0) return // stop if any errors
+
+    console.log('Checkout clicked — connect to backend later', {
       firstName, lastName, streetName, city,
       postalCode, country, phoneNumber, cardNumber, expirationDate, securityCode
     })
     navigate('/order-confirmation')
   }
-  const handlePhoneNumber = (e) => {
-    const value = e.target.value
-    if (/^\d{0,10}$/.test(value)){
-      setPhoneNumber(value)
-    }
-  }
-  const handleCreditCardNumber = (e) => {
-    const value = e.target.value
-    if (/^\d{0,16}$/.test(value)){
-      setCardNumber(value)
-    }
-  }
-  const handleExpirationDate = (e) => {
-    const value = e.target.value
-    if (/^\d{0,2}\/?\d{0,2}$/.test(value)){
-      setExpirationDate(value)
-    }
-  }
-  const handleSecurityCode = (e) => {
-    const value = e.target.value
-    if (/^\d{0,3}$/.test(value)){
-      setSecurityCode(value)
-    }
-  }
+
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
 
@@ -99,9 +172,10 @@ export default function Checkout() {
               type="text"
               placeholder="John"
               value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              onChange={handleNameInput(setFirstName)}
               style={inputStyle}
             />
+            {errors.firstName && <span style={errorStyle}>{errors.firstName}</span>}
           </div>
 
           <div style={fieldGroupStyle}>
@@ -110,9 +184,10 @@ export default function Checkout() {
               type="text"
               placeholder="Smith"
               value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              onChange={handleNameInput(setLastName)}
               style={inputStyle}
             />
+            {errors.lastName && <span style={errorStyle}>{errors.lastName}</span>}
           </div>
 
           <div style={fieldGroupStyle}>
@@ -124,6 +199,7 @@ export default function Checkout() {
               onChange={(e) => setStreetName(e.target.value)}
               style={inputStyle}
             />
+            {errors.streetName && <span style={errorStyle}>{errors.streetName}</span>}
           </div>
 
           <div style={{ display: 'flex', gap: '16px' }}>
@@ -136,17 +212,19 @@ export default function Checkout() {
                 onChange={(e) => setCity(e.target.value)}
                 style={inputStyle}
               />
+              {errors.city && <span style={errorStyle}>{errors.city}</span>}
             </div>
 
             <div style={{ ...fieldGroupStyle, flex: 1 }}>
               <label style={labelStyle}>Postal Code</label>
               <input
                 type="text"
-                placeholder="1A2 B3C"
+                placeholder="A1A 1A1"
                 value={postalCode}
-                onChange={(e) => setPostalCode(e.target.value)}
+                onChange={handlePostalCode}
                 style={inputStyle}
               />
+              {errors.postalCode && <span style={errorStyle}>{errors.postalCode}</span>}
             </div>
           </div>
 
@@ -159,17 +237,19 @@ export default function Checkout() {
               onChange={(e) => setCountry(e.target.value)}
               style={inputStyle}
             />
+            {errors.country && <span style={errorStyle}>{errors.country}</span>}
           </div>
 
           <div style={{ ...fieldGroupStyle, marginBottom: 0 }}>
             <label style={labelStyle}>Phone Number</label>
             <input
               type="text"
-              placeholder="123-456-7890"
+              placeholder="1234567890"
               value={phoneNumber}
               onChange={handlePhoneNumber}
               style={inputStyle}
             />
+            {errors.phoneNumber && <span style={errorStyle}>{errors.phoneNumber}</span>}
           </div>
         </div>
       </div>
@@ -195,50 +275,13 @@ export default function Checkout() {
 
           <div style={{ ...fieldGroupStyle, marginBottom: '36px' }}>
             <label style={{ ...labelStyle, textAlign: 'center' }}>Subtotal</label>
-            <div
-              style={{
-                ...inputStyle,
-                textAlign: 'center',
-                color: '#181313',
-                fontWeight: '600',
-              }}
-            >
-              $0.00
-            </div>
-            <label style={{ ...labelStyle, textAlign: 'center' }}>Shipping</label>
-            <div
-              style={{
-                ...inputStyle,
-                textAlign: 'center',
-                color: '#181313',
-                fontWeight: '600',
-              }}
-            >
-              $0.00
-            </div>
-            <label style={{ ...labelStyle, textAlign: 'center' }}>Tax</label>
-            <div
-              style={{
-                ...inputStyle,
-                textAlign: 'center',
-                color: '#181313',
-                fontWeight: '600',
-              }}
-            >
-              $0.00
-            </div>
-
-            <label style={{ ...labelStyle, textAlign: 'center' }}>You Pay</label>
-            <div
-              style={{
-                ...inputStyle,
-                textAlign: 'center',
-                color: '#181313',
-                fontWeight: '600',
-              }}
-            >
-              $0.00
-            </div>
+            <div style={{ ...inputStyle, textAlign: 'center', color: '#181313', fontWeight: '600' }}>$0.00</div>
+            <label style={{ ...labelStyle, textAlign: 'center', marginTop: '12px' }}>Shipping</label>
+            <div style={{ ...inputStyle, textAlign: 'center', color: '#181313', fontWeight: '600' }}>$0.00</div>
+            <label style={{ ...labelStyle, textAlign: 'center', marginTop: '12px' }}>Tax</label>
+            <div style={{ ...inputStyle, textAlign: 'center', color: '#181313', fontWeight: '600' }}>$0.00</div>
+            <label style={{ ...labelStyle, textAlign: 'center', marginTop: '12px' }}>You Pay</label>
+            <div style={{ ...inputStyle, textAlign: 'center', color: '#181313', fontWeight: '600' }}>$0.00</div>
           </div>
 
           <h2 style={{ color: 'white', fontSize: '20px', fontWeight: 'bold', textAlign: 'center', marginTop: 0, marginBottom: '20px' }}>
@@ -254,6 +297,7 @@ export default function Checkout() {
               onChange={handleCreditCardNumber}
               style={inputStyle}
             />
+            {errors.cardNumber && <span style={errorStyle}>{errors.cardNumber}</span>}
           </div>
 
           <div style={{ display: 'flex', gap: '16px' }}>
@@ -261,11 +305,12 @@ export default function Checkout() {
               <label style={labelStyle}>Expiration Date</label>
               <input
                 type="text"
-                placeholder="__/__"
+                placeholder="MM/YY"
                 value={expirationDate}
                 onChange={handleExpirationDate}
                 style={inputStyle}
               />
+              {errors.expirationDate && <span style={errorStyle}>{errors.expirationDate}</span>}
             </div>
 
             <div style={{ ...fieldGroupStyle, flex: 1 }}>
@@ -277,6 +322,7 @@ export default function Checkout() {
                 onChange={handleSecurityCode}
                 style={inputStyle}
               />
+              {errors.securityCode && <span style={errorStyle}>{errors.securityCode}</span>}
             </div>
           </div>
 
