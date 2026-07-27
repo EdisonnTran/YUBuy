@@ -44,4 +44,9 @@ app.use('/api/message', messageRouter)
 app.use('/api/rating', ratingRouter)
 app.use('/api/user', userRouter)
 
+app.use((err, _req, res, _next) => {
+    console.error(err)
+    res.status(500).json({ error: 'Something went wrong' })
+})
+
 export default app

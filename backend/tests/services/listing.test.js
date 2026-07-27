@@ -3,134 +3,68 @@ import { prismaMock } from '../singleton.js'
 import app from '../../src/app.js'
 import request from 'supertest'
 
-describe('Listing - Tests', () => {
-    beforeEach(() => {
-        jest.clearAllMocks()
+const listing = {
+    id: 'listing-1',
+    title: 'MacBook Air',
+    description: 'Excellent condition',
+    price: 650,
+    category: { name: 'Electronics' }
+}
+
+describe('Listings endpoints', () => {
+    beforeEach(() => jest.clearAllMocks())
+
+    test('getListings returns all active listings', async () => {
+        prismaMock.listing.findMany.mockResolvedValue([listing])
+        const response = await request(app).get('/api/listing').expect(200)
+        expect(response.body).toEqual([listing])
+        expect(prismaMock.listing.findMany).toHaveBeenCalledWith(expect.objectContaining({
+            where: { status: 'ACTIVE' }
+        }))
     })
 
-    describe('GET /api/listing/', () => {
-        test('should return 200 and every listing', async () => {
-            prismaMock.listing.findMany.mockResolvedValue([
-                {id: 1, title: "Test Laptop", description: "A test laptop for sale", price: 100.20, sellerId:500, categoryId:1000},
-                {id: 2, title: "T-Shirt", description: "A slightly used T-shirt", price: 7.50, sellerId: 501, categoryId: 1001}
-            ])
-
-            const response = await request(app)
-                .get('/api/listing/')
-                .expect(200)
-            
-            expect(response.body).toEqual([
-                {id: 1, title: "Test Laptop", description: "A test laptop for sale", price: 100.20, sellerId:500, categoryId:1000},
-                {id: 2, title: "T-Shirt", description: "A slightly used T-shirt", price: 7.50, sellerId: 501, categoryId: 1001}
-            ])
-        })
-
-        test('should return an empty dictionary if no listings exist', async () => {
-            prismaMock.listing.findMany.mockResolvedValue(null)
-
-            const response = await request(app)
-                .get('/api/listing/')
-                .expect(200)
-            
-            expect(response.body).toEqual({})
-        })
+    test('getListings forwards search and category filters to Prisma', async () => {
+        prismaMock.listing.findMany.mockResolvedValue([listing])
+        const response = await request(app)
+            .get('/api/listing?search=macbook&category=Electronics')
+            .expect(200)
+        expect(response.body).toEqual([listing])
+        expect(prismaMock.listing.findMany).toHaveBeenCalledWith(expect.objectContaining({
+            where: {
+                status: 'ACTIVE',
+                OR: [
+                    { title: { contains: 'macbook', mode: 'insensitive' } },
+                    { description: { contains: 'macbook', mode: 'insensitive' } }
+                ],
+                category: { name: { equals: 'Electronics', mode: 'insensitive' } }
+            }
+        }))
     })
 
-    describe('GET /api/listing/:id', () => {
-        test('should return 200 and the listing corresponding to id', async () => {
-            prismaMock.listing.findUnique.mockResolvedValue({
-                id: 1, title: "Test Laptop", description: "A test laptop for sale", price: 100.20, sellerId:500, categoryId:1000
-            })
-
-            const response = await request(app)
-                .get('/api/listing/1')
-                .expect(200)
-            
-            expect(response.body).toEqual({
-                id: 1, title: "Test Laptop", description: "A test laptop for sale", price: 100.20, sellerId:500, categoryId:1000
-            })
-        })
-
-        test('should return an empty dictionary if listing id does not exist', async () => {
-            prismaMock.listing.findUnique.mockResolvedValue(null)
-
-            const response = await request(app)
-                .get('/api/listing/1')
-                .expect(200)
-            
-            expect(response.body).toEqual({})
-        })
+    test('getListings forwards database errors to the error handler', async () => {
+        prismaMock.listing.findMany.mockRejectedValue(new Error('database unavailable'))
+        const response = await request(app).get('/api/listing').expect(500)
+        expect(response.body).toEqual({ error: 'Something went wrong' })
     })
 
-    describe('GET /api/listing/category/:id', () => {
-        test('should return 200 and the listing corresponding to its categoryId', async () => {
-            prismaMock.listing.findMany.mockResolvedValue([
-                {id: 1, title: "Test Laptop", description: "A test laptop for sale", price: 100.20, sellerId:500, categoryId:1000},
-                {id: 2, title: "T-Shirt", description: "A slightly used T-shirt", price: 7.50, sellerId: 501, categoryId: 1000}
-            ])
-
-            const response = await request(app)
-                .get('/api/listing/category/1000')
-                .expect(200)
-            
-            expect(response.body).toEqual([
-                {id: 1, title: "Test Laptop", description: "A test laptop for sale", price: 100.20, sellerId:500, categoryId:1000},
-                {id: 2, title: "T-Shirt", description: "A slightly used T-shirt", price: 7.50, sellerId: 501, categoryId: 1000}
-            ])
-        })
-
-        test('should return an empty dictionary if categoryId does not exist', async () => {
-            prismaMock.listing.findMany.mockResolvedValue(null)
-
-            const response = await request(app)
-                .get('/api/listing/category/1000')
-                .expect(200)
-            
-            expect(response.body).toEqual({})
-        })
+    test('getListingById returns the requested listing', async () => {
+        prismaMock.listing.findUnique.mockResolvedValue(listing)
+        const response = await request(app).get('/api/listing/listing-1').expect(200)
+        expect(response.body).toEqual(listing)
+        expect(prismaMock.listing.findUnique).toHaveBeenCalledWith(expect.objectContaining({
+            where: { id: 'listing-1' }
+        }))
     })
 
-    describe('GET /api/listing/seller/:id', () => {
-        test('should return 200 and the listing corresponding to its sellerId', async () => {
-            prismaMock.listing.findMany.mockResolvedValue([
-                {id: 1, title: "Test Laptop", description: "A test laptop for sale", price: 100.20, sellerId:500, categoryId:1000},
-                {id: 2, title: "T-Shirt", description: "A slightly used T-shirt", price: 7.50, sellerId: 500, categoryId: 1001}
-            ])
-
-            const response = await request(app)
-                .get('/api/listing/seller/500')
-                .expect(200)
-            
-            expect(response.body).toEqual([
-                {id: 1, title: "Test Laptop", description: "A test laptop for sale", price: 100.20, sellerId:500, categoryId:1000},
-                {id: 2, title: "T-Shirt", description: "A slightly used T-shirt", price: 7.50, sellerId: 500, categoryId: 1001}
-            ])
-        })
-
-        test('should return an empty dictionary if sellerId does not exist', async () => {
-            prismaMock.listing.findMany.mockResolvedValue(null)
-
-            const response = await request(app)
-                .get('/api/listing/seller/1000')
-                .expect(200)
-            
-            expect(response.body).toEqual({})
-        })
+    test('getListingById returns 404 when the listing does not exist', async () => {
+        prismaMock.listing.findUnique.mockResolvedValue(null)
+        const response = await request(app).get('/api/listing/missing').expect(404)
+        expect(response.body).toEqual({ error: 'Listing not found' })
     })
 
-    describe('POST /api/listing/', () => {
-        test('should return 200 and create listing', async () => {
-            prismaMock.listing.create.mockImplementation(async ({ data }) => ({
-                id: '1',
-                ...data
-            }))
-
-            const response = await request(app)
-                .post('/api/listing/')
-                .send({title: "Test Laptop", description: "A test laptop for sale", price: 100.20, sellerId:500, categoryId:1000})
-                .expect(200)
-
-            expect(response.body).toEqual({id: '1', title: "Test Laptop", description: "A test laptop for sale", price: 100.20, sellerId:500, categoryId:1000})
-        })
+    test('getListingById rejects an invalid request parameter', async () => {
+        const response = await request(app).get('/api/listing/%20').expect(400)
+        expect(response.body).toEqual({ error: 'A valid listing ID is required' })
+        expect(prismaMock.listing.findUnique).not.toHaveBeenCalled()
     })
 })

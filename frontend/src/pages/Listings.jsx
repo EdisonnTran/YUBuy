@@ -49,6 +49,8 @@ export default function Listings() {
   const [activeCategory, setActiveCategory] = useState('All')
   const navigate = useNavigate()
   const [listings, setListings] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     async function loadListings() {
@@ -59,6 +61,9 @@ export default function Listings() {
         setListings(data.map(normalizeListing))
       } catch (err) {
         console.error('Could not load listings:', err)
+        setError('Could not load listings. Please try again later.')
+      } finally {
+        setIsLoading(false)
       }
     }
     loadListings()
@@ -288,7 +293,15 @@ export default function Listings() {
           </div>
         </div>
 
-        {filteredListings.length > 0 ? (
+        {isLoading ? (
+          <div role="status" style={{ padding: '60px 24px', textAlign: 'center' }}>
+            Loading listings...
+          </div>
+        ) : error ? (
+          <div role="alert" style={{ padding: '60px 24px', textAlign: 'center', color: '#ff7777' }}>
+            {error}
+          </div>
+        ) : filteredListings.length > 0 ? (
           <div
             style={{
               display: 'grid',

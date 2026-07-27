@@ -1,9 +1,11 @@
 import { listingService } from "./ListingService.js";
 
 export class ListingController {
-    getAll = async (_req, res, next) => {
+    getAll = async (req, res, next) => {
         try {
-            const listings = await listingService.getAll();
+            const search = typeof req.query.search === 'string' ? req.query.search.trim() : ''
+            const category = typeof req.query.category === 'string' ? req.query.category.trim() : ''
+            const listings = await listingService.getAll({ search, category });
             res.status(200).send(listings)
         }
         catch (error) { 
@@ -15,7 +17,14 @@ export class ListingController {
         try {
             const listing_id = _req.params.id
 
+            if (!listing_id || !listing_id.trim()) {
+                return res.status(400).json({ error: 'A valid listing ID is required' })
+            }
+
             const listing = await listingService.getOne(listing_id)
+            if (!listing) {
+                return res.status(404).json({ error: 'Listing not found' })
+            }
             res.status(200).send(listing)
         }
         catch (error) {
