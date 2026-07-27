@@ -20,18 +20,29 @@ const CURRENT_USER = { id: 'user_johnmark', name: 'Me' }
 export default function Inbox() {
   const navigate = useNavigate()
   const location = useLocation()
-
   const preloaded = location.state || {}
 
-  const [conversations, setConversations] = useState(
-    preloaded.sellerId ? [{
-      chatId: `${CURRENT_USER.id}_${preloaded.sellerId}_${preloaded.listingId}`,
-      sellerName: preloaded.sellerName || 'Seller',
-      listingTitle: preloaded.listingTitle || 'Listing',
-      lastMessage: '',
-    }] : []
-  )
-  const [activeConvo, setActiveConvo] = useState(conversations[0] || null)
+  const [conversations, setConversations] = useState(() => {
+    const saved = localStorage.getItem('yubuy_conversations')
+    const parsed = saved ? JSON.parse(saved) : []
+    if (preloaded.sellerId) {
+      const newConvo = {
+        chatId: `${CURRENT_USER.id}_${preloaded.sellerId}_${preloaded.listingId}`,
+        sellerName: preloaded.sellerName || 'Seller',
+        listingTitle: preloaded.listingTitle || 'Listing',
+        lastMessage: '',
+      }
+      const exists = parsed.find(c => c.chatId === newConvo.chatId)
+      if (!exists) {
+        const updated = [...parsed, newConvo]
+        localStorage.setItem('yubuy_conversations', JSON.stringify(updated))
+        return updated
+      }
+    }
+    return parsed
+  })
+
+  const [activeConvo, setActiveConvo] = useState(null)
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
   const [imagePreview, setImagePreview] = useState(null)
@@ -47,6 +58,16 @@ export default function Inbox() {
     u.name.toLowerCase().includes(userSearch.toLowerCase())
   )
 
+  // On mount, auto-select first conversation and fetch its messages
+  useEffect(() => {
+    const saved = localStorage.getItem('yubuy_conversations')
+    const parsed = saved ? JSON.parse(saved) : []
+    if (parsed.length > 0) {
+      setActiveConvo(parsed[0])
+      fetchMessages(parsed[0].chatId)
+    }
+  }, [])
+
   const fetchMessages = async (chatId) => {
     try {
       setLoading(true)
@@ -60,29 +81,25 @@ export default function Inbox() {
     }
   }
 
-  useEffect(() => {
-    if (!activeConvo) return
-    fetchMessages(activeConvo.chatId)
-  }, [activeConvo])
+  const handleSelectConvo = (convo) => {
+    setActiveConvo(convo)
+    fetchMessages(convo.chatId)
+  }
 
   const handleSend = async () => {
     if (!newMessage.trim() && !imagePreview) return
     if (!activeConvo) return
-
     try {
       await axios.post(`${API_BASE}/${activeConvo.chatId}`, {
         senderId: CURRENT_USER.id,
         text: newMessage,
       })
-
       await fetchMessages(activeConvo.chatId)
-
-      setConversations(prev => prev.map(c =>
-        c.chatId === activeConvo.chatId
-          ? { ...c, lastMessage: newMessage }
-          : c
-      ))
-
+      const updated = conversations.map(c =>
+        c.chatId === activeConvo.chatId ? { ...c, lastMessage: newMessage } : c
+      )
+      setConversations(updated)
+      localStorage.setItem('yubuy_conversations', JSON.stringify(updated))
       setNewMessage('')
       setImagePreview(null)
     } catch (err) {
@@ -101,10 +118,16 @@ export default function Inbox() {
   const handleDeleteConversation = (chatId) => {
     const updated = conversations.filter(c => c.chatId !== chatId)
     setConversations(updated)
+    localStorage.setItem('yubuy_conversations', JSON.stringify(updated))
     setShowDeleteConfirm(null)
     if (activeConvo?.chatId === chatId) {
-      setActiveConvo(updated[0] || null)
-      setMessages([])
+      if (updated.length > 0) {
+        setActiveConvo(updated[0])
+        fetchMessages(updated[0].chatId)
+      } else {
+        setActiveConvo(null)
+        setMessages([])
+      }
     }
   }
 
@@ -117,20 +140,22 @@ export default function Inbox() {
       listingTitle: 'New Conversation',
       lastMessage: newMessageText || '',
     }
-    setConversations(prev => [...prev, newConvo])
+    const updated = [...conversations, newConvo]
+    setConversations(updated)
+    localStorage.setItem('yubuy_conversations', JSON.stringify(updated))
     setActiveConvo(newConvo)
     setShowNewMessage(false)
     setSelectedUser(null)
     setUserSearch('')
-
     if (newMessageText) {
       axios.post(`${API_BASE}/${chatId}`, {
         senderId: CURRENT_USER.id,
         text: newMessageText,
       }).then(() => fetchMessages(chatId))
         .catch(err => console.error('Failed to send first message:', err))
+    } else {
+      setMessages([])
     }
-
     setNewMessageText('')
   }
 
@@ -184,7 +209,7 @@ export default function Inbox() {
           {conversations.map(convo => (
             <div
               key={convo.chatId}
-              onClick={() => setActiveConvo(convo)}
+              onClick={() => handleSelectConvo(convo)}
               style={{
                 padding: '16px 24px',
                 cursor: 'pointer',
