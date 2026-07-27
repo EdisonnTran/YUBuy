@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FaTag, FaUser, FaStar, FaMapMarkerAlt, FaEnvelope, FaImage } from 'react-icons/fa'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
@@ -22,93 +22,74 @@ const locationCoordinates = {
   'The Village':    { lat: 43.7745, lng: -79.4998 },
 }
 
-// Placeholder data — will be replaced with real API call later
-const mockListings = [
-  {
-    id: 1,
-    title: 'Introduction to Psychology',
-    price: 45,
-    category: 'Textbooks',
-    proximityTag: 'Keele Campus',
-    condition: 'Like New',
-    status: 'available',
-    postedDate: 'June 24, 2026',
-    description: 'Great introductory psychology textbook. Barely used, no highlights.',
-    images: [],
-    seller: { name: 'Jane D.', rating: 4.3, totalRatings: 12 },
-  },
-  {
-    id: 2,
-    title: 'MacBook Air M1',
-    price: 650,
-    category: 'Electronics',
-    proximityTag: 'York Lanes',
-    condition: 'Good',
-    status: 'available',
-    postedDate: 'June 22, 2026',
-    description: 'MacBook Air M1 in great condition. Battery health at 91%. Comes with charger.',
-    images: [],
-    seller: { name: 'Mark T.', rating: 4.7, totalRatings: 8 },
-  },
-  {
-    id: 3,
-    title: 'Ergonomic Desk Chair',
-    price: 80,
-    category: 'Furniture',
-    proximityTag: 'The Village',
-    condition: 'Good',
-    status: 'available',
-    postedDate: 'June 20, 2026',
-    description: 'Comfortable ergonomic desk chair, perfect for long study sessions.',
-    images: [],
-    seller: { name: 'Alex K.', rating: 4.1, totalRatings: 5 },
-  },
-  {
-    id: 4,
-    title: 'Calculus: Early Transcendentals',
-    price: 55,
-    category: 'Textbooks',
-    proximityTag: 'Keele Campus',
-    condition: 'Like New',
-    status: 'available',
-    postedDate: 'June 19, 2026',
-    description: 'Calculus Early Transcendentals, barely used. No writing or highlights inside.',
-    images: [],
-    seller: { name: 'Sara M.', rating: 4.5, totalRatings: 20 },
-  },
-  {
-    id: 5,
-    title: 'Noise-Cancelling Headphones',
-    price: 95,
-    category: 'Electronics',
-    proximityTag: 'Glendon Campus',
-    condition: 'Excellent',
-    status: 'available',
-    postedDate: 'June 18, 2026',
-    description: 'Sony noise-cancelling headphones. Perfect for studying in loud environments.',
-    images: [],
-    seller: { name: 'Jane D.', rating: 4.3, totalRatings: 12 },
-  },
-  {
-    id: 6,
-    title: 'Compact Study Desk',
-    price: 60,
-    category: 'Furniture',
-    proximityTag: 'The Village',
-    condition: 'Used',
-    status: 'available',
-    postedDate: 'June 17, 2026',
-    description: 'Small compact desk, great for dorm rooms. Some minor scratches on surface.',
-    images: [],
-    seller: { name: 'Mark T.', rating: 4.7, totalRatings: 8 },
-  },
-]
+const API = 'http://localhost:3000'
+
+function formatDate(iso) {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+}
+
+// Maps a listing from GET /api/listing/:id into the shape this page renders.
+// NOTE: the Listing model has no `condition` field yet, so it falls back to 'Unspecified'.
+function normalizeListing(raw) {
+  return {
+    id: raw.id,
+    title: raw.title,
+    price: Number(raw.price),
+    category: raw.category?.name || 'Other',
+    proximityTag: raw.proximity || '',
+    condition: raw.condition || 'Unspecified',
+    status: raw.status === 'ACTIVE' ? 'available' : 'sold',
+    postedDate: formatDate(raw.createdAt),
+    description: raw.description || '',
+    images: (raw.images || []).map(img => img.url || img),
+    seller: { id: raw.seller?.id, name: raw.seller?.name || 'Unknown seller', rating: null, totalRatings: 0 },
+  }
+}
 
 export default function ListingDetail() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const listing = mockListings.find(l => l.id === parseInt(id)) || mockListings[0]
+  const [listing, setListing] = useState(null)
   const [activeImg, setActiveImg] = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadListing() {
+      try {
+        const res = await fetch(`${API}/api/listing/${id}`)
+        if (!res.ok) throw new Error(`Request failed: ${res.status}`)
+        const mapped = normalizeListing(await res.json())
+
+        // Pull the seller's received ratings to show an average (non-blocking).
+        try {
+          const rRes = await fetch(`${API}/api/rating/subject/${mapped.seller.id}`)
+          if (rRes.ok) {
+            const ratings = await rRes.json()
+            if (Array.isArray(ratings) && ratings.length > 0) {
+              const avg = ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length
+              mapped.seller.rating = Math.round(avg * 10) / 10
+              mapped.seller.totalRatings = ratings.length
+            }
+          }
+        } catch (e) {
+          console.error('Could not load seller ratings:', e)
+        }
+
+        setListing(mapped)
+      } catch (err) {
+        console.error('Could not load listing:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadListing()
+  }, [id])
+
+  const centerStyle = { minHeight: '100vh', backgroundColor: '#1a1a1a', color: '#aaa', display: 'flex', alignItems: 'center', justifyContent: 'center' }
+  if (loading) return <div style={centerStyle}>Loading listing...</div>
+  if (!listing) return <div style={centerStyle}>Listing not found.</div>
+
   const coords = locationCoordinates[listing.proximityTag]
 
   return (
@@ -282,7 +263,9 @@ export default function ListingDetail() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
                 <FaStar style={{ color: '#f5a623', fontSize: '13px' }} />
                 <span style={{ color: '#aaaaaa', fontSize: '13px' }}>
-                  {listing.seller.rating} ({listing.seller.totalRatings} ratings)
+                  {listing.seller.rating != null
+                    ? `${listing.seller.rating} (${listing.seller.totalRatings} ratings)`
+                    : 'No ratings yet'}
                 </span>
               </div>
             </div>
