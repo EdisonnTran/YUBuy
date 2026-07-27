@@ -47,6 +47,7 @@ export default function Checkout() {
       firstName, lastName, streetName, city,
       postalCode, country, phoneNumber, cardNumber, expirationDate, securityCode
     })
+    navigate('/order-confirmation')
   }
   const handlePhoneNumber = (e) => {
     const value = e.target.value
