@@ -1,8 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FaTag, FaBoxOpen, FaDollarSign, FaMapMarkerAlt, FaClipboardList } from 'react-icons/fa'
 
-const CATEGORIES = ['Textbooks', 'Electronics', 'Furniture', 'Clothing', 'Sports', 'Other']
 const CONDITIONS = ['Like New', 'Good', 'Fair']
 const LOCATIONS  = ['Keele Campus', 'Glendon Campus']
 
@@ -38,6 +37,14 @@ const selectStyle = {
   appearance: 'none',
 }
 
+const tagStyle = {
+  backgroundColor: '#3a3a3a',
+  color: '#aaaaaa',
+  padding: '4px 12px',
+  borderRadius: '20px',
+  fontSize: '13px',
+}
+
 export default function SellItem() {
   const navigate = useNavigate()
 
@@ -48,21 +55,56 @@ export default function SellItem() {
   const [condition, setCondition]     = useState('')
   const [location, setLocation]       = useState('')
 
+  // fetched from backend
+  const [categories, setCategories]   = useState([])
+
+  // fetch categories on page load
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/category')
+        const data = await res.json()
+        setCategories(data)
+      } catch (err) {
+        console.error('Failed to fetch categories:', err)
+      }
+    }
+    fetchCategories()
+  }, [])
+
   const handlePriceChange = (e) => {
     const value = e.target.value
-    // only allow digits and a single decimal point, max 7 chars (e.g. 9999.99)
     if (/^\d{0,5}(\.\d{0,2})?$/.test(value)) {
       setPrice(value)
     }
   }
 
-  const handleSubmit = () => {
-    console.log('Submit listing — connect to POST /api/v1/listings later', {
-      title, description, price, category, condition, location
-    })
+  const handleSubmit = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/listing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          description,
+          price: parseFloat(price),
+          proximity: location,       // form calls it "location", backend calls it "proximity"
+          sellerId: null,            // replace with real user ID once auth is set up
+          categoryId: category,      // category state holds the ID from the backend
+        })
+      })
+      const data = await res.json()
+      console.log('Listing created:', data)
+      navigate('/profile')
+    } catch (err) {
+      console.error('Failed to create listing:', err)
+    }
   }
 
   const isFormFilled = title && price && category && condition && location
+
+  // find the category name for the preview tag (since category state now holds an ID)
+  const selectedCategoryName = categories.find(c => c.id === parseInt(category))?.name
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#1a1a1a' }}>
@@ -169,8 +211,8 @@ export default function SellItem() {
                   style={selectStyle}
                 >
                   <option value="" disabled>Select category</option>
-                  {CATEGORIES.map(c => (
-                    <option key={c} value={c}>{c}</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
               </div>
@@ -202,7 +244,6 @@ export default function SellItem() {
 
           <div style={{ backgroundColor: '#2a2a2a', borderRadius: '12px', padding: '28px' }}>
 
-            {/* Price + location side by side */}
             <div style={{ display: 'flex', gap: '16px' }}>
               <div style={{ ...fieldGroupStyle, flex: 1, marginBottom: 0 }}>
                 <label style={labelStyle}>Price ($)</label>
@@ -235,15 +276,15 @@ export default function SellItem() {
           </div>
         </div>
 
-        {/* Preview pill tags — shows what the listing card will look like */}
+        {/* Preview pill tags */}
         {(category || condition || location) && (
           <div>
             <h2 style={{ color: '#aaaaaa', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 16px' }}>
               Preview Tags
             </h2>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {category && (
-                <span style={tagStyle}>{category}</span>
+              {selectedCategoryName && (
+                <span style={tagStyle}>{selectedCategoryName}</span>
               )}
               {location && (
                 <span style={{ ...tagStyle, display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -291,12 +332,4 @@ export default function SellItem() {
       </div>
     </div>
   )
-}
-
-const tagStyle = {
-  backgroundColor: '#3a3a3a',
-  color: '#aaaaaa',
-  padding: '4px 12px',
-  borderRadius: '20px',
-  fontSize: '13px',
 }
