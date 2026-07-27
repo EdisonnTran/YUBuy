@@ -22,7 +22,7 @@ const locationCoordinates = {
   'The Village':    { lat: 43.7745, lng: -79.4998 },
 }
 
-const API = 'http://localhost:3000'
+const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 
 function formatDate(iso) {
   if (!iso) return ''
@@ -47,12 +47,32 @@ function normalizeListing(raw) {
   }
 }
 
+// TODO: replace this with the authenticated user's email once auth is connected.
+const CURRENT_USER_EMAIL = 'alice@my.yorku.ca'
+
+function formatRating(average, count) {
+  if (!count) return 'No ratings yet'
+  return `${Number(average).toFixed(1)} (${count} ${count === 1 ? 'rating' : 'ratings'})`
+}
+
 export default function ListingDetail() {
-  const navigate = useNavigate()
   const { id } = useParams()
+  const navigate = useNavigate()
   const [listing, setListing] = useState(null)
   const [activeImg, setActiveImg] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [ratingSummary, setRatingSummary] = useState({
+    average: null,
+    count: 0,
+    userRating: null,
+  })
+  const [selectedScore, setSelectedScore] = useState(0)
+  const [hoveredScore, setHoveredScore] = useState(0)
+  const [comment, setComment] = useState('')
+  const [ratingsLoading, setRatingsLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [ratingMessage, setRatingMessage] = useState('')
+  const [ratingError, setRatingError] = useState(false)
 
   useEffect(() => {
     async function loadListing() {
@@ -86,6 +106,80 @@ export default function ListingDetail() {
     loadListing()
   }, [id])
 
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function loadRatings() {
+      setRatingsLoading(true)
+      setRatingError(false)
+
+      try {
+        const response = await fetch(
+          `${API}/api/ratings/listing/${id}?authorEmail=${encodeURIComponent(CURRENT_USER_EMAIL)}`,
+          { signal: controller.signal },
+        )
+
+        if (!response.ok) throw new Error(`Rating request failed with status ${response.status}`)
+
+        const summary = await response.json()
+        setRatingSummary(summary)
+        setSelectedScore(summary.userRating?.score || 0)
+        setComment(summary.userRating?.comment || '')
+      } catch (error) {
+        if (error.name !== 'AbortError') setRatingError(true)
+      } finally {
+        if (!controller.signal.aborted) setRatingsLoading(false)
+      }
+    }
+
+    if (id) loadRatings()
+
+    return () => controller.abort()
+  }, [id])
+
+  async function handleSubmitRating(event) {
+    event.preventDefault()
+
+
+    if (!selectedScore) {
+      setRatingMessage('Choose a star rating first.')
+      setRatingError(true)
+      return
+    }
+
+    setSubmitting(true)
+    setRatingMessage('')
+    setRatingError(false)
+
+    try {
+      const response = await fetch(`${API}/api/ratings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listingId: id,
+          authorEmail: CURRENT_USER_EMAIL,
+          score: selectedScore,
+          comment: comment.trim(),
+        }),
+      })
+
+      if (!response.ok) throw new Error(`Rating request failed with status ${response.status}`)
+
+      const data = await response.json()
+      const summary = data.summary || data
+      setRatingSummary(summary)
+      setSelectedScore(summary.userRating?.score || selectedScore)
+      setComment(summary.userRating?.comment || comment)
+      setRatingMessage('Rating saved.')
+    } catch {
+      setRatingError(true)
+      setRatingMessage('Could not save your rating. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const visibleScore = hoveredScore || selectedScore
   const centerStyle = { minHeight: '100vh', backgroundColor: '#1a1a1a', color: '#aaa', display: 'flex', alignItems: 'center', justifyContent: 'center' }
   if (loading) return <div style={centerStyle}>Loading listing...</div>
   if (!listing) return <div style={centerStyle}>Listing not found.</div>
@@ -271,6 +365,88 @@ export default function ListingDetail() {
             </div>
           </div>
         </div>
+
+        <form onSubmit={handleSubmitRating} style={{ backgroundColor: '#1a1a1a', borderRadius: '12px', padding: '20px' }}>
+          <h2 style={{ color: 'white', fontSize: '16px', fontWeight: '600', margin: '0 0 12px' }}>
+            Rate this listing
+          </h2>
+
+          <div style={{ display: 'flex', gap: '7px' }} onMouseLeave={() => setHoveredScore(0)}>
+            {[1, 2, 3, 4, 5].map((score) => (
+              <button
+                key={score}
+                type="button"
+                aria-label={`${score} star rating`}
+                aria-pressed={selectedScore === score}
+                onClick={() => {
+                  setSelectedScore(score)
+                  setRatingMessage('')
+                  setRatingError(false)
+                }}
+                onMouseEnter={() => setHoveredScore(score)}
+                onFocus={() => setHoveredScore(score)}
+                onBlur={() => setHoveredScore(0)}
+                style={{
+                  width: '34px',
+                  height: '34px',
+                  border: 0,
+                  backgroundColor: 'transparent',
+                  color: score <= visibleScore ? '#f5a623' : '#666',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              >
+                <FaStar />
+              </button>
+            ))}
+          </div>
+
+          <textarea
+            value={comment}
+            onChange={(event) => setComment(event.target.value)}
+            placeholder="Optional comment"
+            rows={3}
+            maxLength={500}
+            style={{
+              width: '100%',
+              margin: '14px 0',
+              boxSizing: 'border-box',
+              resize: 'vertical',
+              border: '1px solid #444',
+              borderRadius: '8px',
+              backgroundColor: '#2a2a2a',
+              color: 'white',
+              padding: '10px',
+              fontSize: '14px',
+              fontFamily: 'inherit',
+            }}
+          />
+
+          <button
+            type="submit"
+            disabled={submitting || ratingsLoading}
+            style={{
+              width: '100%',
+              padding: '12px',
+              backgroundColor: submitting || ratingsLoading ? '#777' : '#CC0000',
+              color: 'white',
+              border: 'none',
+              borderRadius: '10px',
+              fontSize: '15px',
+              fontWeight: '500',
+              cursor: submitting || ratingsLoading ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {submitting ? 'Saving...' : ratingSummary.userRating ? 'Update Rating' : 'Submit Rating'}
+          </button>
+
+          {ratingMessage && (
+            <p style={{ color: ratingError ? '#ff7777' : '#22c55e', fontSize: '13px', margin: '10px 0 0' }}>
+              {ratingMessage}
+            </p>
+          )}
+        </form>
 
         {/* Message button */}
         <button

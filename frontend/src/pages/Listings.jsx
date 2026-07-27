@@ -302,7 +302,16 @@ export default function Listings() {
               return (
                 <article
                   key={listing.id}
+                  role="link"
+                  tabIndex={0}
+                  aria-label={`View ${listing.title}`}
                   onClick={() => navigate(`/listings/${listing.id}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      navigate(`/listings/${listing.id}`)
+                    }
+                  }}
                   style={{
                     position: 'relative',
                     overflow: 'hidden',
