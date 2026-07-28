@@ -35,10 +35,10 @@ export default function Login() {
     }
     setError('')
     try {
-      const response = await axios.post('http://localhost:8080/api/user/login', {
+        const response = await axios.post(`${API_BASE}/api/user/login`, {
         email,
         password
-      })
+      }, { withCredentials: true })
       console.log('Login successful:', response.data)
       // send verification code to email
       await axios.post(`${API_BASE}/api/user/login`, {email, password})
