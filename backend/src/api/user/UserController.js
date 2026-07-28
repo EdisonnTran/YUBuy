@@ -74,6 +74,7 @@ export class UserController {
                     _req.session.email = _req.body.email
                     _req.session.user_id = serviceResponse.id
                     _req.session.loggedIn = true
+                    _req.session.role = serviceResponse.role
                     res.status(200).send(serviceResponse)
                 })
             } else {
