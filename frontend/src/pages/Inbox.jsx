@@ -1,48 +1,49 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { FaTag, FaUser, FaArrowLeft, FaPaperPlane, FaImage, FaTimes, FaPlus, FaTrash, FaSearch } from 'react-icons/fa'
+import axios from 'axios'
 
 const MAX_CHARS = 500
+const API_BASE = 'http://localhost:8080/api/chat'
 
-// Placeholder users for new message — will be replaced with real API call later
+// Placeholder users — will be replaced with real API call later
 const mockUsers = [
-  { id: 1, name: 'Jane D.' },
-  { id: 2, name: 'Mark T.' },
-  { id: 3, name: 'Alex K.' },
-  { id: 4, name: 'Sara M.' },
+  { id: 'user_jane', name: 'Jane D.' },
+  { id: 'user_mark', name: 'Mark T.' },
+  { id: 'user_alex', name: 'Alex K.' },
+  { id: 'user_sara', name: 'Sara M.' },
 ]
 
-// Placeholder data — will be replaced with real API call later
-const mockConversations = [
-  {
-    id: 1,
-    sellerName: 'Jane D.',
-    listingTitle: 'Calculus Textbook – 10th Edition',
-    lastMessage: 'Is this still available?',
-    timestamp: 'June 24, 2026',
-    messages: [
-      { id: 1, sender: 'me', text: 'Is this still available?', timestamp: '10:00 AM', image: null },
-      { id: 2, sender: 'them', text: 'Yes it is! Are you interested?', timestamp: '10:05 AM', image: null },
-      { id: 3, sender: 'me', text: 'Yes, can we meet at Keele campus?', timestamp: '10:08 AM', image: null },
-    ]
-  },
-  {
-    id: 2,
-    sellerName: 'Mark T.',
-    listingTitle: 'IKEA Desk Lamp',
-    lastMessage: 'Sure, tomorrow works!',
-    timestamp: 'June 22, 2026',
-    messages: [
-      { id: 1, sender: 'me', text: 'Hey is the lamp still for sale?', timestamp: '9:00 AM', image: null },
-      { id: 2, sender: 'them', text: 'Sure, tomorrow works!', timestamp: '9:30 AM', image: null },
-    ]
-  },
-]
+// Current logged in user — will come from auth context later
+const CURRENT_USER = { id: 'user_johnmark', name: 'Me' }
 
 export default function Inbox() {
   const navigate = useNavigate()
-  const [conversations, setConversations] = useState(mockConversations)
-  const [activeConvo, setActiveConvo] = useState(mockConversations[0])
+  const location = useLocation()
+  const preloaded = location.state || {}
+
+  const [conversations, setConversations] = useState(() => {
+    const saved = localStorage.getItem('yubuy_conversations')
+    const parsed = saved ? JSON.parse(saved) : []
+    if (preloaded.sellerId) {
+      const newConvo = {
+        chatId: `${CURRENT_USER.id}_${preloaded.sellerId}_${preloaded.listingId}`,
+        sellerName: preloaded.sellerName || 'Seller',
+        listingTitle: preloaded.listingTitle || 'Listing',
+        lastMessage: '',
+      }
+      const exists = parsed.find(c => c.chatId === newConvo.chatId)
+      if (!exists) {
+        const updated = [...parsed, newConvo]
+        localStorage.setItem('yubuy_conversations', JSON.stringify(updated))
+        return updated
+      }
+    }
+    return parsed
+  })
+
+  const [activeConvo, setActiveConvo] = useState(null)
+  const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
   const [imagePreview, setImagePreview] = useState(null)
   const [showNewMessage, setShowNewMessage] = useState(false)
@@ -51,29 +52,59 @@ export default function Inbox() {
   const [userSearch, setUserSearch] = useState('')
   const [showUserDropdown, setShowUserDropdown] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null)
+  const [loading, setLoading] = useState(false)
 
   const filteredUsers = mockUsers.filter(u =>
     u.name.toLowerCase().includes(userSearch.toLowerCase())
   )
 
-  const handleSend = () => {
+  // On mount, auto-select first conversation and fetch its messages
+  useEffect(() => {
+    const saved = localStorage.getItem('yubuy_conversations')
+    const parsed = saved ? JSON.parse(saved) : []
+    if (parsed.length > 0) {
+      setActiveConvo(parsed[0])
+      fetchMessages(parsed[0].chatId)
+    }
+  }, [])
+
+  const fetchMessages = async (chatId) => {
+    try {
+      setLoading(true)
+      const res = await axios.get(`${API_BASE}/${chatId}`)
+      setMessages(res.data)
+    } catch (err) {
+      console.error('Failed to fetch messages:', err)
+      setMessages([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSelectConvo = (convo) => {
+    setActiveConvo(convo)
+    fetchMessages(convo.chatId)
+  }
+
+  const handleSend = async () => {
     if (!newMessage.trim() && !imagePreview) return
-    const msg = {
-      id: activeConvo.messages.length + 1,
-      sender: 'me',
-      text: newMessage,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      image: imagePreview,
+    if (!activeConvo) return
+    try {
+      await axios.post(`${API_BASE}/${activeConvo.chatId}`, {
+        senderId: CURRENT_USER.id,
+        text: newMessage,
+      })
+      await fetchMessages(activeConvo.chatId)
+      const updated = conversations.map(c =>
+        c.chatId === activeConvo.chatId ? { ...c, lastMessage: newMessage } : c
+      )
+      setConversations(updated)
+      localStorage.setItem('yubuy_conversations', JSON.stringify(updated))
+      setNewMessage('')
+      setImagePreview(null)
+    } catch (err) {
+      console.error('Failed to send message:', err)
     }
-    const updatedConvo = {
-      ...activeConvo,
-      messages: [...activeConvo.messages, msg],
-      lastMessage: newMessage || 'Image',
-    }
-    setConversations(prev => prev.map(c => c.id === activeConvo.id ? updatedConvo : c))
-    setActiveConvo(updatedConvo)
-    setNewMessage('')
-    setImagePreview(null)
   }
 
   const handleImageUpload = (e) => {
@@ -84,36 +115,47 @@ export default function Inbox() {
     reader.readAsDataURL(file)
   }
 
-  const handleDeleteConversation = (convoId) => {
-    const updated = conversations.filter(c => c.id !== convoId)
+  const handleDeleteConversation = (chatId) => {
+    const updated = conversations.filter(c => c.chatId !== chatId)
     setConversations(updated)
+    localStorage.setItem('yubuy_conversations', JSON.stringify(updated))
     setShowDeleteConfirm(null)
-    if (activeConvo.id === convoId) {
-      setActiveConvo(updated[0] || null)
+    if (activeConvo?.chatId === chatId) {
+      if (updated.length > 0) {
+        setActiveConvo(updated[0])
+        fetchMessages(updated[0].chatId)
+      } else {
+        setActiveConvo(null)
+        setMessages([])
+      }
     }
   }
 
   const handleCreateConversation = () => {
     if (!selectedUser) return
+    const chatId = `${CURRENT_USER.id}_${selectedUser.id}_general`
     const newConvo = {
-      id: conversations.length + 1,
+      chatId,
       sellerName: selectedUser.name,
       listingTitle: 'New Conversation',
-      lastMessage: newMessageText || 'Started a conversation',
-      timestamp: 'Just now',
-      messages: newMessageText ? [{
-        id: 1,
-        sender: 'me',
-        text: newMessageText,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        image: null,
-      }] : []
+      lastMessage: newMessageText || '',
     }
-    setConversations(prev => [...prev, newConvo])
+    const updated = [...conversations, newConvo]
+    setConversations(updated)
+    localStorage.setItem('yubuy_conversations', JSON.stringify(updated))
     setActiveConvo(newConvo)
     setShowNewMessage(false)
     setSelectedUser(null)
     setUserSearch('')
+    if (newMessageText) {
+      axios.post(`${API_BASE}/${chatId}`, {
+        senderId: CURRENT_USER.id,
+        text: newMessageText,
+      }).then(() => fetchMessages(chatId))
+        .catch(err => console.error('Failed to send first message:', err))
+    } else {
+      setMessages([])
+    }
     setNewMessageText('')
   }
 
@@ -166,18 +208,17 @@ export default function Inbox() {
           )}
           {conversations.map(convo => (
             <div
-              key={convo.id}
-              onClick={() => setActiveConvo(convo)}
+              key={convo.chatId}
+              onClick={() => handleSelectConvo(convo)}
               style={{
                 padding: '16px 24px',
                 cursor: 'pointer',
-                backgroundColor: activeConvo?.id === convo.id ? '#1a1a1a' : 'transparent',
-                borderLeft: activeConvo?.id === convo.id ? '3px solid #CC0000' : '3px solid transparent',
+                backgroundColor: activeConvo?.chatId === convo.chatId ? '#1a1a1a' : 'transparent',
+                borderLeft: activeConvo?.chatId === convo.chatId ? '3px solid #CC0000' : '3px solid transparent',
                 borderBottom: '1px solid #333',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
-                position: 'relative'
               }}
             >
               <div style={{
@@ -195,18 +236,12 @@ export default function Inbox() {
                   {convo.listingTitle}
                 </p>
                 <p style={{ color: '#666', fontSize: '12px', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {convo.lastMessage}
+                  {convo.lastMessage || 'No messages yet'}
                 </p>
               </div>
-
-              {/* Delete button */}
               <button
-                onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(convo.id) }}
-                style={{
-                  background: 'none', border: 'none',
-                  color: '#555', cursor: 'pointer', fontSize: '14px',
-                  padding: '4px', flexShrink: 0
-                }}
+                onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(convo.chatId) }}
+                style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '14px', padding: '4px', flexShrink: 0 }}
               >
                 <FaTrash />
               </button>
@@ -233,7 +268,6 @@ export default function Inbox() {
 
       {/* Right panel — active conversation */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-
         {activeConvo ? (
           <>
             {/* Conversation header */}
@@ -256,22 +290,21 @@ export default function Inbox() {
 
             {/* Messages */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {activeConvo.messages.map(msg => (
-                <div key={msg.id} style={{ display: 'flex', justifyContent: msg.sender === 'me' ? 'flex-end' : 'flex-start' }}>
+              {loading && <p style={{ color: '#666', textAlign: 'center' }}>Loading messages...</p>}
+              {!loading && messages.length === 0 && (
+                <p style={{ color: '#666', textAlign: 'center', fontSize: '14px' }}>No messages yet — say hello!</p>
+              )}
+              {messages.map((msg, i) => (
+                <div key={msg.messageId || i} style={{ display: 'flex', justifyContent: msg.senderId === CURRENT_USER.id ? 'flex-end' : 'flex-start' }}>
                   <div style={{
                     maxWidth: '60%',
-                    backgroundColor: msg.sender === 'me' ? '#CC0000' : '#2a2a2a',
-                    borderRadius: msg.sender === 'me' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                    backgroundColor: msg.senderId === CURRENT_USER.id ? '#CC0000' : '#2a2a2a',
+                    borderRadius: msg.senderId === CURRENT_USER.id ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                     padding: '12px 16px',
                   }}>
-                    {msg.image && (
-                      <img src={msg.image} alt="uploaded" style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: msg.text ? '8px' : 0 }} />
-                    )}
-                    {msg.text && (
-                      <p style={{ color: 'white', fontSize: '14px', margin: '0 0 4px' }}>{msg.text}</p>
-                    )}
-                    <p style={{ color: msg.sender === 'me' ? 'rgba(255,255,255,0.6)' : '#666', fontSize: '11px', margin: 0, textAlign: 'right' }}>
-                      {msg.timestamp}
+                    <p style={{ color: 'white', fontSize: '14px', margin: '0 0 4px' }}>{msg.text}</p>
+                    <p style={{ color: msg.senderId === CURRENT_USER.id ? 'rgba(255,255,255,0.6)' : '#666', fontSize: '11px', margin: 0, textAlign: 'right' }}>
+                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
                 </div>
@@ -344,24 +377,10 @@ export default function Inbox() {
             <h2 style={{ color: 'white', fontSize: '18px', fontWeight: '600', margin: 0 }}>Delete Conversation</h2>
             <p style={{ color: '#aaaaaa', fontSize: '14px', margin: 0 }}>Are you sure you want to delete this conversation? This cannot be undone.</p>
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button
-                onClick={() => setShowDeleteConfirm(null)}
-                style={{
-                  flex: 1, padding: '12px', backgroundColor: 'transparent',
-                  color: '#aaaaaa', border: '1px solid #444', borderRadius: '12px',
-                  fontSize: '14px', cursor: 'pointer'
-                }}
-              >
+              <button onClick={() => setShowDeleteConfirm(null)} style={{ flex: 1, padding: '12px', backgroundColor: 'transparent', color: '#aaaaaa', border: '1px solid #444', borderRadius: '12px', fontSize: '14px', cursor: 'pointer' }}>
                 Cancel
               </button>
-              <button
-                onClick={() => handleDeleteConversation(showDeleteConfirm)}
-                style={{
-                  flex: 1, padding: '12px', backgroundColor: '#CC0000',
-                  color: 'white', border: 'none', borderRadius: '12px',
-                  fontSize: '14px', cursor: 'pointer'
-                }}
-              >
+              <button onClick={() => handleDeleteConversation(showDeleteConfirm)} style={{ flex: 1, padding: '12px', backgroundColor: '#CC0000', color: 'white', border: 'none', borderRadius: '12px', fontSize: '14px', cursor: 'pointer' }}>
                 Delete
               </button>
             </div>
@@ -378,10 +397,7 @@ export default function Inbox() {
           <div style={{ backgroundColor: '#2a2a2a', borderRadius: '16px', padding: '32px', width: '400px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 style={{ color: 'white', fontSize: '18px', fontWeight: '600', margin: 0 }}>New Message</h2>
-              <button
-                onClick={() => { setShowNewMessage(false); setSelectedUser(null); setUserSearch('') }}
-                style={{ background: 'none', border: 'none', color: '#aaaaaa', cursor: 'pointer', fontSize: '18px' }}
-              >
+              <button onClick={() => { setShowNewMessage(false); setSelectedUser(null); setUserSearch('') }} style={{ background: 'none', border: 'none', color: '#aaaaaa', cursor: 'pointer', fontSize: '18px' }}>
                 <FaTimes />
               </button>
             </div>
@@ -389,19 +405,13 @@ export default function Inbox() {
             {/* User search + dropdown */}
             <div>
               <label style={{ color: '#aaaaaa', fontSize: '13px', display: 'block', marginBottom: '8px' }}>Send to</label>
-
-              {/* Search input */}
               <div style={{ position: 'relative' }}>
                 <FaSearch style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#666', fontSize: '13px' }} />
                 <input
                   type="text"
                   placeholder="Search users..."
                   value={selectedUser ? selectedUser.name : userSearch}
-                  onChange={(e) => {
-                    setUserSearch(e.target.value)
-                    setSelectedUser(null)
-                    setShowUserDropdown(true)
-                  }}
+                  onChange={(e) => { setUserSearch(e.target.value); setSelectedUser(null); setShowUserDropdown(true) }}
                   onFocus={() => setShowUserDropdown(true)}
                   style={{
                     width: '100%', padding: '12px 12px 12px 36px',
@@ -410,8 +420,6 @@ export default function Inbox() {
                     outline: 'none', boxSizing: 'border-box'
                   }}
                 />
-
-                {/* Dropdown results */}
                 {showUserDropdown && !selectedUser && (
                   <div style={{
                     position: 'absolute', top: '100%', left: 0, right: 0,
@@ -419,48 +427,31 @@ export default function Inbox() {
                     borderRadius: '8px', marginTop: '4px', zIndex: 10,
                     maxHeight: '160px', overflowY: 'auto'
                   }}>
-                    {filteredUsers.length === 0 ? (
-                      <p style={{ color: '#666', fontSize: '13px', padding: '12px', margin: 0 }}>No users found</p>
-                    ) : (
-                      filteredUsers.map(user => (
+                    {filteredUsers.length === 0
+                      ? <p style={{ color: '#666', fontSize: '13px', padding: '12px', margin: 0 }}>No users found</p>
+                      : filteredUsers.map(user => (
                         <div
                           key={user.id}
                           onClick={() => { setSelectedUser(user); setShowUserDropdown(false) }}
-                          style={{
-                            padding: '10px 16px', cursor: 'pointer', color: 'white',
-                            fontSize: '14px', display: 'flex', alignItems: 'center', gap: '10px'
-                          }}
+                          style={{ padding: '10px 16px', cursor: 'pointer', color: 'white', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}
                           onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2a2a2a'}
                           onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                         >
-                          <div style={{
-                            width: '28px', height: '28px', borderRadius: '50%',
-                            backgroundColor: '#CC0000', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                          }}>
+                          <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#CC0000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <FaUser style={{ color: 'white', fontSize: '12px' }} />
                           </div>
                           {user.name}
                         </div>
                       ))
-                    )}
+                    }
                   </div>
                 )}
               </div>
-
-              {/* Selected user pill */}
               {selectedUser && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-                  <span style={{
-                    backgroundColor: 'rgba(204,0,0,0.15)', color: '#CC0000',
-                    border: '1px solid rgba(204,0,0,0.4)', padding: '4px 12px',
-                    borderRadius: '20px', fontSize: '13px',
-                    display: 'flex', alignItems: 'center', gap: '6px'
-                  }}>
+                  <span style={{ backgroundColor: 'rgba(204,0,0,0.15)', color: '#CC0000', border: '1px solid rgba(204,0,0,0.4)', padding: '4px 12px', borderRadius: '20px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     {selectedUser.name}
-                    <FaTimes
-                      onClick={() => { setSelectedUser(null); setUserSearch('') }}
-                      style={{ cursor: 'pointer', fontSize: '11px' }}
-                    />
+                    <FaTimes onClick={() => { setSelectedUser(null); setUserSearch('') }} style={{ cursor: 'pointer', fontSize: '11px' }} />
                   </span>
                 </div>
               )}
@@ -502,7 +493,6 @@ export default function Inbox() {
           </div>
         </div>
       )}
-
     </div>
   )
 }
