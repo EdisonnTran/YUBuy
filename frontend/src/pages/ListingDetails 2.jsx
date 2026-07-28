@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FaEnvelope, FaImage, FaMapMarkerAlt, FaStar, FaTag, FaUser } from 'react-icons/fa'
 
-const API_BASE = 'http://localhost:3000'
+const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
 // TODO: replace with the real logged-in user's identity once auth is wired up.
 const CURRENT_USER_EMAIL = 'alice@my.yorku.ca'
