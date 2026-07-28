@@ -1,7 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FaTag, FaBoxOpen, FaDollarSign, FaMapMarkerAlt, FaClipboardList } from 'react-icons/fa'
 
+const CATEGORIES = [
+  { id: 1, name: 'Textbooks' },
+  { id: 2, name: 'Electronics' },
+  { id: 3, name: 'Furniture' },
+  { id: 4, name: 'Clothing' },
+  { id: 5, name: 'Sports' },
+  { id: 6, name: 'Other' },
+]
 const CONDITIONS = ['Like New', 'Good', 'Fair']
 const LOCATIONS  = ['Keele Campus', 'Glendon Campus']
 
@@ -55,23 +63,6 @@ export default function SellItem() {
   const [condition, setCondition]     = useState('')
   const [location, setLocation]       = useState('')
 
-  // fetched from backend
-  const [categories, setCategories]   = useState([])
-
-  // fetch categories on page load
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await fetch('http://localhost:5000/api/category')
-        const data = await res.json()
-        setCategories(data)
-      } catch (err) {
-        console.error('Failed to fetch categories:', err)
-      }
-    }
-    fetchCategories()
-  }, [])
-
   const handlePriceChange = (e) => {
     const value = e.target.value
     if (/^\d{0,5}(\.\d{0,2})?$/.test(value)) {
@@ -88,9 +79,9 @@ export default function SellItem() {
           title,
           description,
           price: parseFloat(price),
-          proximity: location,       // form calls it "location", backend calls it "proximity"
-          sellerId: null,            // replace with real user ID once auth is set up
-          categoryId: category,      // category state holds the ID from the backend
+          proximity: location,
+          sellerId: null,       // replace with real user ID once auth is set up
+          categoryId: category,
         })
       })
       const data = await res.json()
@@ -103,8 +94,7 @@ export default function SellItem() {
 
   const isFormFilled = title && price && category && condition && location
 
-  // find the category name for the preview tag (since category state now holds an ID)
-  const selectedCategoryName = categories.find(c => c.id === parseInt(category))?.name
+  const selectedCategoryName = CATEGORIES.find(c => c.id === parseInt(category))?.name
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#1a1a1a' }}>
@@ -211,7 +201,7 @@ export default function SellItem() {
                   style={selectStyle}
                 >
                   <option value="" disabled>Select category</option>
-                  {categories.map(c => (
+                  {CATEGORIES.map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
