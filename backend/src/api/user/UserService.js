@@ -13,7 +13,7 @@ export class UserService {
     }
 
     createOne = async (payload) => {
-        await prisma.user.create({data: {
+        return await prisma.user.create({data: {
             email: payload.email,
             passwordHash: payload.passwordHash,
             name: payload.name
@@ -25,7 +25,7 @@ export class UserService {
     }
 
     updatePassword = async (email, password) => {
-        await prisma.user.update({ where: { email }, data: { passwordHash: password } })
+        return await prisma.user.update({ where: { email }, data: { passwordHash: password } })
     }
 
 }

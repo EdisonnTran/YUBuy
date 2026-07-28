@@ -2,9 +2,22 @@ import prisma from '../../db/db.js'
 
 export class ListingService {
     
-    getAll = async () => {
+    getAll = async ({ search, category } = {}) => {
+        const where = { status: 'ACTIVE' }
+
+        if (search) {
+            where.OR = [
+                { title: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } }
+            ]
+        }
+
+        if (category) {
+            where.category = { name: { equals: category, mode: 'insensitive' } }
+        }
+
         return await prisma.listing.findMany({
-            where: { status: 'ACTIVE' },
+            where,
             orderBy: { createdAt: 'desc' },
             include: {
                 images: true,
@@ -50,8 +63,8 @@ export class ListingService {
     }
 
     createOne = async (payload) => {
-        await prisma.listing.create({data: {
-            payload
+        return await prisma.listing.create({data: {
+            ...payload
         }})
     }
 

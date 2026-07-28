@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import ListingsMap from '../components/ListingsMap'
 import {
   FaBook,
   FaChair,
@@ -11,77 +12,68 @@ import {
   FaUserCircle,
 } from 'react-icons/fa'
 
-const listings = [
-  {
-    id: 1,
-    title: 'Introduction to Psychology',
-    price: 45,
-    category: 'Textbooks',
-    condition: 'Like new',
-    location: 'Keele Campus',
-    icon: FaBook,
-  },
-  {
-    id: 2,
-    title: 'MacBook Air M1',
-    price: 650,
-    category: 'Electronics',
-    condition: 'Good',
-    location: 'York Lanes',
-    icon: FaLaptop,
-  },
-  {
-    id: 3,
-    title: 'Ergonomic Desk Chair',
-    price: 80,
-    category: 'Furniture',
-    condition: 'Good',
-    location: 'The Village',
-    icon: FaChair,
-  },
-  {
-    id: 4,
-    title: 'Calculus: Early Transcendentals',
-    price: 55,
-    category: 'Textbooks',
-    condition: 'Like new',
-    location: 'Keele Campus',
-    icon: FaBook,
-  },
-  {
-    id: 5,
-    title: 'Noise-Cancelling Headphones',
-    price: 95,
-    category: 'Electronics',
-    condition: 'Excellent',
-    location: 'Glendon Campus',
-    icon: FaLaptop,
-  },
-  {
-    id: 6,
-    title: 'Compact Study Desk',
-    price: 60,
-    category: 'Furniture',
-    condition: 'Used',
-    location: 'The Village',
-    icon: FaChair,
-  },
-]
+const CATEGORY_ICONS = {
+  Textbooks: FaBook,
+  Electronics: FaLaptop,
+  Furniture: FaChair,
+}
+
+function iconForCategory(categoryName) {
+  return CATEGORY_ICONS[categoryName] || FaTag
+}
+
+// Maps a listing from GET /api/listing into the shape this page renders.
+// NOTE: the Listing model has no `condition` field yet, so it falls back to
+// 'Unspecified'. `proximity` is used as the location.
+function normalizeListing(listing) {
+  const categoryName = listing.category?.name || 'Other'
+  return {
+    id: listing.id,
+    title: listing.title,
+    price: Number(listing.price),
+    category: categoryName,
+    condition: listing.condition || 'Unspecified',
+    location: listing.proximity || 'York University',
+    icon: iconForCategory(categoryName),
+  }
+}
 
 const categories = ['All', 'Textbooks', 'Electronics', 'Furniture']
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+
 // TODO: replace with the real logged-in user's id once auth is wired up.
 // This is Alice's id from the seed data, used for local testing.
-const CURRENT_USER_ID = 'cmr2ep0vr0003xprwfbwag2x7'
+const CURRENT_USER_ID = 'cmrdx326n00039u8ovdrdsv60'
 
 export default function Listings() {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
   const navigate = useNavigate()
+  const [listings, setListings] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    async function loadListings() {
+      try {
+        const response = await fetch(`${API_BASE}/api/listing`)
+        if (!response.ok) throw new Error(`Request failed: ${response.status}`)
+        const data = await response.json()
+        setListings(data.map(normalizeListing))
+      } catch (err) {
+        console.error('Could not load listings:', err)
+        setError('Could not load listings. Please try again later.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    loadListings()
+  }, [])
 
   async function handleAddToWishlist(listingId) {
     try {
-      const response = await fetch('http://localhost:3000/api/wishlist', {
+      const response = await fetch(`${API_BASE}/api/wishlist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: CURRENT_USER_ID, listingId }),
@@ -89,7 +81,7 @@ export default function Listings() {
       if (!response.ok) throw new Error(`Request failed: ${response.status}`)
       alert('Added to wishlist!')
     } catch (err) {
-      alert('Could not add to wishlist. (This is expected with mock data — real listings will work.)')
+      alert('Could not add to wishlist.')
     }
   }
 
@@ -106,7 +98,7 @@ export default function Listings() {
 
       return matchesCategory && matchesSearch
     })
-  }, [activeCategory, search])
+  }, [activeCategory, search, listings])
 
   return (
     <div
@@ -242,6 +234,14 @@ export default function Listings() {
       </section>
 
       <main style={{ padding: '38px 48px 60px' }}>
+        
+        <div style={{ marginBottom: '32px' }}>
+          <h2 style={{ color: 'white', fontSize: '20px', fontWeight: '700', margin: '0 0 16px' }}>
+            Listings near you
+          </h2>
+          <ListingsMap listings={filteredListings} />
+        </div>
+        
         <div
           style={{
             display: 'flex',
@@ -295,7 +295,15 @@ export default function Listings() {
           </div>
         </div>
 
-        {filteredListings.length > 0 ? (
+        {isLoading ? (
+          <div role="status" style={{ padding: '60px 24px', textAlign: 'center' }}>
+            Loading listings...
+          </div>
+        ) : error ? (
+          <div role="alert" style={{ padding: '60px 24px', textAlign: 'center', color: '#ff7777' }}>
+            {error}
+          </div>
+        ) : filteredListings.length > 0 ? (
           <div
             style={{
               display: 'grid',
@@ -309,7 +317,16 @@ export default function Listings() {
               return (
                 <article
                   key={listing.id}
+                  role="link"
+                  tabIndex={0}
+                  aria-label={`View ${listing.title}`}
                   onClick={() => navigate(`/listings/${listing.id}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      navigate(`/listings/${listing.id}`)
+                    }
+                  }}
                   style={{
                     position: 'relative',
                     overflow: 'hidden',
@@ -440,6 +457,8 @@ export default function Listings() {
           </div>
         )}
       </main>
+
+      
     </div>
   )
 }

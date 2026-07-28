@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaTag } from 'react-icons/fa'
 import axios from 'axios'
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -40,7 +41,7 @@ export default function Login() {
       })
       console.log('Login successful:', response.data)
       // send verification code to email
-      await axios.post('http://localhost:8080/api/user/send-code', { email })
+      await axios.post(`${API_BASE}/api/user/login`, {email, password})
       // shows verify code popup on success
       setShowVerifyCode(true)
     } catch (err) {
@@ -56,7 +57,7 @@ export default function Login() {
     }
     setCodeError('')
     try {
-      await axios.post('http://localhost:8080/api/user/verify-code', { email, code })
+      await axios.post(`${API_BASE}/api/user/verify-code`, { email, code })
       console.log('Code verified!')
       navigate('/listings')
     } catch (err) {
@@ -77,7 +78,7 @@ export default function Login() {
     }
     setResetError('')
     try {
-      await axios.post('http://localhost:8080/api/user/forgot-password', { email: resetEmail })
+      await axios.post(`${API_BASE}/api/user/forgot-password`, { email: resetEmail })
       setResetSubmitted(true)
     } catch (err) {
       setResetError('Email not found. Please try again.')
