@@ -1,8 +1,28 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { FaEnvelope, FaImage, FaMapMarkerAlt, FaStar, FaTag, FaUser } from 'react-icons/fa'
+import { FaTag, FaUser, FaStar, FaMapMarkerAlt, FaEnvelope, FaImage } from 'react-icons/fa'
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
+import L from 'leaflet'
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
+import markerIcon from 'leaflet/dist/images/marker-icon.png'
+import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 
-const API_BASE = 'http://localhost:3000'
+delete L.Icon.Default.prototype._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+})
+
+const locationCoordinates = {
+  'Keele Campus':   { lat: 43.7735, lng: -79.5019 },
+  'Glendon Campus': { lat: 43.7360, lng: -79.3758 },
+  'York Lanes':     { lat: 43.7738, lng: -79.5023 },
+  'The Village':    { lat: 43.7745, lng: -79.4998 },
+}
+
+const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
 // TODO: replace with the real logged-in user's identity once auth is wired up.
 const CURRENT_USER_EMAIL = 'alice@my.yorku.ca'
