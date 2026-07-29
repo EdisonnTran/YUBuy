@@ -62,6 +62,18 @@ The following environment variables are required to run the backend application.
 | -------- | ----------- |
 | `DATABASE_URL` | The connection string to your Prisma ORM. |
 | `PORT` | The port your server will listen on. |
+| `SESSION_SECRET` | A session secret key (can be any value) |
+| `AZURE_STORAGE_CONNECTION_STRING` | The connection string to your Azure storage account for ADLS |
+| `EMAIL_USER` | yubuy.noreply@gmail.com|
+| `EMAIL_PASS` | Ask Elyse or if ta, it will be included in our submission comments|
+
+## Frontend Environment Variables
+
+The following environment variable is required to run the frontend application. This should be set in the `frontend/.env` file.
+
+| Variable | Description | 
+| -------- | ----------- |
+| `VITE_API_BASE_URL` | http://localhost:8080 |
 
 ## Database Setup
 

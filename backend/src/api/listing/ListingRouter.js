@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { requireRole } from '../../middleware/auth.js'
 import { listingController } from './ListingController.js'
 
 export const listingRouter = Router()
@@ -20,4 +21,4 @@ listingRouter.get('/seller/:id', listingController.getBySeller)
 listingRouter.post('/', listingController.createOne)
 
 // DELETE: delete a listing given the listing's id
-listingRouter.delete('/', listingController.deleteOne)
+listingRouter.delete('/', requireRole('ADMIN'), listingController.deleteOne)

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaTag } from 'react-icons/fa'
 import axios from 'axios'
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+
 export default function Register() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -29,7 +31,7 @@ export default function Register() {
     }
     setError('')
     try {
-      const response = await axios.post('http://localhost:8080/api/user', {
+      const response = await axios.post(`${API_BASE}/api/user`, {
         name,
         email,
         password

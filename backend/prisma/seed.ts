@@ -6,6 +6,7 @@
 import 'dotenv/config'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcrypt'
 
 // Prisma 7 connects through a driver adapter (not a bare `new PrismaClient()`).
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
@@ -35,6 +36,16 @@ async function main() {
   })
   const bob = await prisma.user.create({
     data: { email: 'bob@my.yorku.ca', name: 'Bob Singh', passwordHash: 'seed-placeholder' },
+  })
+
+  // Admin account — real hashed password so it can actually be logged into for the demo.
+  const admin = await prisma.user.create({
+    data: {
+      email: 'yubuy.noreply@gmail.com',
+      name: 'YUBuy Admin',
+      passwordHash: await bcrypt.hash('yubuy2026', 10),
+      role: 'ADMIN',
+    },
   })
 
   // --- Listings (all sold by Bob for now) ---
@@ -80,7 +91,7 @@ async function main() {
     data: { wishlist: { connect: [{ id: calcBook.id }, { id: monitor.id }] } },
   })
 
-  console.log('Done: 3 categories, 2 users, 3 listings, 2 wishlist saves.')
+  console.log('Done: 3 categories, 3 users, 3 listings, 2 wishlist saves.')
 }
 
 main()

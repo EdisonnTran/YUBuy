@@ -14,9 +14,15 @@ import { chatRouter } from './api/chat/ChatRouter.js'
 
 const app = express()
 
-app.use(cors())
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+const isProduction = process.env.NODE_ENV === 'production'
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+
+app.use(cors({
+    origin: frontendUrl,
+    credentials: true,
+}))
+app.use(express.json({ limit: '10mb' }))
+app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 app.use(
     session({
         secret: process.env.SESSION_SECRET,
@@ -24,9 +30,9 @@ app.use(
         saveUninitialized: true,
         cookie: {
         httpOnly: true,
-        secure: false,
+        secure: isProduction,
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        sameSite: 'lax',
+        sameSite: isProduction ? 'none' : 'lax',
         }
     })
 )
@@ -45,5 +51,10 @@ app.use('/api/message', messageRouter)
 app.use('/api/rating', ratingRouter)
 app.use('/api/user', userRouter)
 app.use('/api/chat/', chatRouter)
+
+app.use((err, _req, res, _next) => {
+    console.error(err)
+    res.status(500).json({ error: 'Something went wrong' })
+})
 
 export default app

@@ -74,6 +74,7 @@ export class UserController {
                     _req.session.email = _req.body.email
                     _req.session.user_id = serviceResponse.id
                     _req.session.loggedIn = true
+                    _req.session.role = serviceResponse.role
                     res.status(200).send(serviceResponse)
                 })
             } else {
@@ -108,7 +109,8 @@ export class UserController {
             if (!user) return res.status(404).send({ message: 'User not found' })
             const token = Math.random().toString(36).substring(2, 15)
             resetTokens[token] = { email, expiry: Date.now() + 3600000 }
-            const resetLink = `http://localhost:5173/reset-password?token=${token}`
+            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+            const resetLink = `${frontendUrl}/reset-password?token=${token}`    
             await sendEmail(email, 'Reset Your YUBuy Password', `Hi there,\n\nClick the link below to reset your password:\n\n${resetLink}\n\nThis link expires in 1 hour.\n\nIf you didn't request this, please ignore this email.\n\nThe YUBuy Team`)
             res.status(200).send({ message: 'Reset link sent' })
         } catch (error) { next(error) }

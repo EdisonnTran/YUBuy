@@ -480,7 +480,8 @@ describe('Login Page', () => {
             {
                 email: 'yubuy.noreply@gmail.com',
                 password: '12345678'
-            }
+            },
+            { withCredentials: true }
         )
 
         expect(axios.post).toHaveBeenNthCalledWith(
@@ -538,12 +539,13 @@ describe('Login Page', () => {
             })
         )
 
-        expect(axios.post).toHaveBeenCalledWith(
+       expect(axios.post).toHaveBeenCalledWith(
             'http://localhost:8080/api/user/login',
             {
                 email: 'yubuy@test.com',
                 password: '12345678'
-            }
+            },
+            { withCredentials: true }
         )
 
         expect(

@@ -40,25 +40,32 @@ function normalizeListing(listing) {
 
 const categories = ['All', 'Textbooks', 'Electronics', 'Furniture']
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+
 // TODO: replace with the real logged-in user's id once auth is wired up.
 // This is Alice's id from the seed data, used for local testing.
-const CURRENT_USER_ID = 'cmrdx326n00039u8ovdrdsv60'
+const CURRENT_USER_ID = 'cms6a8of300039krwp8n6hggi'
 
 export default function Listings() {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
   const navigate = useNavigate()
   const [listings, setListings] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     async function loadListings() {
       try {
-        const response = await fetch('http://localhost:3000/api/listing')
+        const response = await fetch(`${API_BASE}/api/listing`)
         if (!response.ok) throw new Error(`Request failed: ${response.status}`)
         const data = await response.json()
         setListings(data.map(normalizeListing))
       } catch (err) {
         console.error('Could not load listings:', err)
+        setError('Could not load listings. Please try again later.')
+      } finally {
+        setIsLoading(false)
       }
     }
     loadListings()
@@ -66,7 +73,7 @@ export default function Listings() {
 
   async function handleAddToWishlist(listingId) {
     try {
-      const response = await fetch('http://localhost:3000/api/wishlist', {
+      const response = await fetch(`${API_BASE}/api/wishlist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: CURRENT_USER_ID, listingId }),
@@ -138,6 +145,7 @@ export default function Listings() {
           </span>
           <button
             type="button"
+            onClick={() => navigate('/sell')}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -288,7 +296,15 @@ export default function Listings() {
           </div>
         </div>
 
-        {filteredListings.length > 0 ? (
+        {isLoading ? (
+          <div role="status" style={{ padding: '60px 24px', textAlign: 'center' }}>
+            Loading listings...
+          </div>
+        ) : error ? (
+          <div role="alert" style={{ padding: '60px 24px', textAlign: 'center', color: '#ff7777' }}>
+            {error}
+          </div>
+        ) : filteredListings.length > 0 ? (
           <div
             style={{
               display: 'grid',
@@ -302,7 +318,16 @@ export default function Listings() {
               return (
                 <article
                   key={listing.id}
+                  role="link"
+                  tabIndex={0}
+                  aria-label={`View ${listing.title}`}
                   onClick={() => navigate(`/listings/${listing.id}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      navigate(`/listings/${listing.id}`)
+                    }
+                  }}
                   style={{
                     position: 'relative',
                     overflow: 'hidden',
