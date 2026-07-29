@@ -28,9 +28,9 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
+    "googleapis": "^173.0.0",
     "jest": "^30.4.2",
     "jest-mock-extended": "^4.0.1",
-    "nodemailer": "^9.0.3",
     "pg": "^8.22.0",
     "prisma-mock": "^1.1.0",
     "supertest": "^7.2.2"
