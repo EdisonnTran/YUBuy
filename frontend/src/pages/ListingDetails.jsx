@@ -38,6 +38,49 @@ export default function ListingDetail() {
   const [error, setError] = useState(null)
   const [ratingMessage, setRatingMessage] = useState('')
 
+  const [uploadingImage, setUploadingImage] = useState(false)
+
+  // Reads the chosen image file as base64 and saves it to this listing via
+  // POST /api/image. Images are stored as base64 data URIs so they persist
+  // through deploys without needing a separate file host.
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      alert('Please choose an image file.')
+      return
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      alert('Please choose an image smaller than 4 MB.')
+      return
+    }
+    setUploadingImage(true)
+    try {
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result)
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+      const res = await fetch(`${API_BASE}/api/image`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_url: base64, listingId: listing.id }),
+      })
+      if (!res.ok) throw new Error(`Upload failed: ${res.status}`)
+      const saved = await res.json()
+      const newIndex = listing.images.length
+      setListing((prev) => ({ ...prev, images: [...prev.images, saved] }))
+      setActiveImg(newIndex)
+    } catch (err) {
+      console.error('Could not upload image:', err)
+      alert('Could not upload image. Please try again.')
+    } finally {
+      setUploadingImage(false)
+      e.target.value = ''
+    }
+  }
+
   useEffect(() => {
     async function loadListing() {
       setLoading(true)
@@ -45,9 +88,9 @@ export default function ListingDetail() {
 
       try {
         const [listingResponse, ratingResponse] = await Promise.all([
-          fetch(`${API_BASE}/api/listings/${id}`),
+          fetch(`${API_BASE}/api/listing/${id}`),
           fetch(
-            `${API_BASE}/api/ratings/listing/${id}?authorEmail=${encodeURIComponent(
+            `${API_BASE}/api/rating/listing/${id}?authorEmail=${encodeURIComponent(
               CURRENT_USER_EMAIL,
             )}`,
           ),
@@ -90,7 +133,7 @@ export default function ListingDetail() {
     setRatingMessage('')
 
     try {
-      const response = await fetch(`${API_BASE}/api/ratings`, {
+      const response = await fetch(`${API_BASE}/api/rating`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -173,6 +216,19 @@ export default function ListingDetail() {
           </div>
         )}
 
+        {/* Add a photo (image upload) */}
+        <label style={{
+          display: 'inline-flex', alignItems: 'center', gap: '8px', alignSelf: 'flex-start',
+          padding: '8px 14px', backgroundColor: '#2a2a2a', border: '1px solid #444',
+          borderRadius: '8px', color: '#ccc', fontSize: '13px', cursor: 'pointer'
+        }}>
+          <FaImage style={{ fontSize: '14px' }} />
+          {uploadingImage ? 'Uploading...' : 'Add a photo'}
+          <input type="file" accept="image/*" onChange={handleImageUpload}
+                 disabled={uploadingImage} style={{ display: 'none' }} />
+        </label>
+
+        {/* Title, date, price and status badge */}
         <div>
           <h1 style={{ color: 'white', fontSize: '28px', fontWeight: 'bold', margin: '0 0 4px' }}>
             {listing.title}
