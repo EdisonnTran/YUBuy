@@ -38,6 +38,7 @@ app.use(
 
 // Health check
 app.get('/', (req, res) => res.send('YUBuy API is running'))
+app.get('/version-check', (req, res) => res.send('gmail-api-v2-c526bfc'))
 
 // Feature routes
 app.use('/api/wishlist', wishlistRouter)
