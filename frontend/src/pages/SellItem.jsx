@@ -1,15 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FaTag, FaBoxOpen, FaDollarSign, FaMapMarkerAlt, FaClipboardList } from 'react-icons/fa'
 
-const CATEGORIES = [
-  { id: 1, name: 'Textbooks' },
-  { id: 2, name: 'Electronics' },
-  { id: 3, name: 'Furniture' },
-  { id: 4, name: 'Clothing' },
-  { id: 5, name: 'Sports' },
-  { id: 6, name: 'Other' },
-]
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+
 const CONDITIONS = ['Like New', 'Good', 'Fair']
 const LOCATIONS  = ['Keele Campus', 'Glendon Campus']
 
@@ -62,6 +56,48 @@ export default function SellItem() {
   const [category, setCategory]       = useState('')
   const [condition, setCondition]     = useState('')
   const [location, setLocation]       = useState('')
+  const [categories, setCategories]   = useState([])
+  const [currentUser, setCurrentUser] = useState(null)
+  const [userError, setUserError]     = useState(null)
+  const [submitError, setSubmitError] = useState(null)
+
+  // Load the currently logged-in user from the session 
+  useEffect(() => {
+    async function loadCurrentUser() {
+      try {
+        const res = await fetch(`${API_BASE}/api/user/me`, {
+          credentials: 'include',
+        })
+        if (!res.ok) {
+          setUserError('You must be logged in to sell an item.')
+          return
+        }
+        const user = await res.json()
+        setCurrentUser(user)
+      } catch (err) {
+        console.error('Failed to load current user:', err)
+        setUserError('Could not verify your account. Please try logging in again.')
+      }
+    }
+    loadCurrentUser()
+  }, [])
+
+  // Load real categories from the backend instead of hardcoding fake IDs
+  // that don't match the actual Category records in the database.
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const res = await fetch(`${API_BASE}/api/category`)
+        if (res.ok) {
+          const data = await res.json()
+          setCategories(data)
+        }
+      } catch (err) {
+        console.error('Failed to load categories:', err)
+      }
+    }
+    loadCategories()
+  }, [])
 
   const handlePriceChange = (e) => {
     const value = e.target.value
@@ -71,30 +107,38 @@ export default function SellItem() {
   }
 
   const handleSubmit = async () => {
+    if (!currentUser) {
+      setSubmitError('You must be logged in to post a listing.')
+      return
+    }
+    setSubmitError(null)
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/listing`, {
+      const res = await fetch(`${API_BASE}/api/listing`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           title,
           description,
           price: parseFloat(price),
           proximity: location,
-          sellerId: null,       // replace with real user ID once auth is set up
+          sellerId: currentUser.id,
           categoryId: category,
         })
       })
+      if (!res.ok) throw new Error(`Failed to create listing: ${res.status}`)
       const data = await res.json()
       console.log('Listing created:', data)
+      navigate('/profile')
     } catch (err) {
       console.error('Failed to create listing:', err)
+      setSubmitError('Could not post your listing. Please try again.')
     }
-    navigate('/profile')
   }
 
   const isFormFilled = title && price && category && condition && location
 
-  const selectedCategoryName = CATEGORIES.find(c => c.id === parseInt(category))?.name
+  const selectedCategoryName = categories.find(c => c.id === category)?.name
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#1a1a1a' }}>
@@ -131,6 +175,10 @@ export default function SellItem() {
             <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>Fill in the details to post your item</p>
           </div>
         </div>
+
+        {userError && (
+          <p style={{ color: '#ff7777', fontSize: '13px', textAlign: 'center' }}>{userError}</p>
+        )}
 
         <button
           onClick={() => navigate(-1)}
@@ -201,7 +249,7 @@ export default function SellItem() {
                   style={selectStyle}
                 >
                   <option value="" disabled>Select category</option>
-                  {CATEGORIES.map(c => (
+                  {categories.map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
@@ -298,25 +346,31 @@ export default function SellItem() {
           </div>
         )}
 
+        {submitError && (
+          <p style={{ color: '#ff7777', fontSize: '13px' }}>{submitError}</p>
+        )}
+
         {/* Submit */}
         <button
           onClick={handleSubmit}
-          disabled={!isFormFilled}
+          disabled={!isFormFilled || !currentUser}
           style={{
             padding: '16px',
-            backgroundColor: isFormFilled ? '#CC0000' : '#3a3a3a',
-            color: isFormFilled ? 'white' : '#666',
+            backgroundColor: (isFormFilled && currentUser) ? '#CC0000' : '#3a3a3a',
+            color: (isFormFilled && currentUser) ? 'white' : '#666',
             border: 'none',
             borderRadius: '12px',
             fontSize: '16px',
             fontWeight: '600',
-            cursor: isFormFilled ? 'pointer' : 'not-allowed',
+            cursor: (isFormFilled && currentUser) ? 'pointer' : 'not-allowed',
             width: '100%',
             transition: 'background-color 0.2s',
             marginBottom: '48px',
           }}
         >
-          {isFormFilled ? 'Post Listing' : 'Fill in required fields to post'}
+          {!currentUser
+            ? 'Log in to post a listing'
+            : isFormFilled ? 'Post Listing' : 'Fill in required fields to post'}
         </button>
 
       </div>

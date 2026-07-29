@@ -6,6 +6,9 @@ export const userRouter = Router()
 // GET: retrieve all users
 userRouter.get('/', userController.getAll)
 
+// GET: retrieve the currently logged-in user from the session
+userRouter.get('/me', userController.getCurrentUser)
+
 // GET: retrieve a user by its id
 userRouter.get('/:id', userController.getOne)
 
