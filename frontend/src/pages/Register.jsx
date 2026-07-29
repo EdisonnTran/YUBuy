@@ -35,7 +35,7 @@ export default function Register() {
         name,
         email,
         password
-      })
+      },{ withCredentials: true })
       console.log('Register successful:', response.data)
       // connected to backend, navigates to listings on success
       navigate('/listings')

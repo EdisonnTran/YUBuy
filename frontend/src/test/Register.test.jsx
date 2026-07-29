@@ -231,7 +231,8 @@ describe('Registration Page', () => {
                 name: 'John Doe',
                 email: 'john@test.com',
                 password: '12345678'
-            }
+            },
+            { withCredentials: true }
         )
 
         expect(
@@ -259,14 +260,15 @@ describe('Registration Page', () => {
             })
         )
 
-        expect(axios.post).toHaveBeenCalledWith(
-            'http://localhost:8080/api/user',
-            {
-                name: 'John Doe',
-                email: 'john@test.com',
-                password: '12345678'
-            }
-        )
+       expect(axios.post).toHaveBeenCalledWith(
+        'http://localhost:8080/api/user',
+        {
+          email: 'john@test.com',
+         name: 'John Doe',
+         password: '12345678'
+         },
+         { withCredentials: true }
+    )
 
         expect(
             await screen.findByText(

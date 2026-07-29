@@ -50,7 +50,16 @@ export class UserController {
                     name: _req.body.name
                 }
                 const serviceResponse = await userService.createOne(payload)
-                res.status(200).send(serviceResponse)
+                _req.session.save((err) => {
+                    if (err) {
+                         return res.status(500).send("Error saving session")
+                    }
+                    _req.session.email = serviceResponse.email
+                    _req.session.user_id = serviceResponse.id
+                    _req.session.loggedIn = true
+                    _req.session.role = serviceResponse.role
+                     res.status(200).send(serviceResponse)
+                })
             }
             catch (error) {
                 if (error.code === 'P2002') {
@@ -60,7 +69,20 @@ export class UserController {
                 }
             }
         }
-    
+        
+     getCurrentUser = async (_req, res, next) => {
+        try {
+         if (!_req.session?.user_id) {
+            return res.status(401).send({ message: 'Not logged in' })
+        }
+        const user = await userService.getOne(_req.session.user_id)
+        if (!user) return res.status(404).send({ message: 'User not found' })
+        res.status(200).send(user)
+    }
+    catch (error) {
+        next(error)
+    }
+}
     verifyUser = async (_req, res, next) => {
         try {
             const serviceResponse = await userService.findByEmail(_req.body.email)

@@ -4,9 +4,6 @@ import { FaTag, FaUser, FaStar, FaMapMarkerAlt, FaEdit, FaTrash } from 'react-ic
 
 const API_BASE = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}`
 
-// TODO: replace with real logged in user ID from auth context later
-const CURRENT_USER_ID = 'cmr2ep0vr0003xprwfbwag2x7'
-
 export default function SellerProfile() {
   const navigate = useNavigate()
   const [seller, setSeller] = useState(null)
@@ -20,22 +17,31 @@ export default function SellerProfile() {
         setLoading(true)
         setError(null)
 
-        const [userRes, listingsRes] = await Promise.all([
-          fetch(`${API_BASE}/api/user/${CURRENT_USER_ID}`),
-          fetch(`${API_BASE}/api/listing/seller/${CURRENT_USER_ID}`)
-        ])
+        // Find user thats logged in 
+        const userRes = await fetch(`${API_BASE}/api/user/me`, {
+          credentials: 'include',
+        })
 
-        if (!userRes.ok) throw new Error('Could not load user profile')
-        if (!listingsRes.ok) throw new Error('Could not load listings')
+        if (!userRes.ok) {
+          throw new Error('You must be logged in to view your profile.')
+        }
 
         const userData = await userRes.json()
+
+        // Find user's listings using their real ID.
+        const listingsRes = await fetch(`${API_BASE}/api/listing/seller/${userData.id}`, {
+          credentials: 'include',
+        })
+
+        if (!listingsRes.ok) throw new Error('Could not load listings')
+
         const listingsData = await listingsRes.json()
 
         setSeller(userData)
         setListings(listingsData)
       } catch (err) {
         console.error('Failed to load profile:', err)
-        setError('Could not load profile. Is the backend running?')
+        setError(err.message || 'Could not load profile. Is the backend running?')
       } finally {
         setLoading(false)
       }
