@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaTag } from 'react-icons/fa'
 import axios from 'axios'
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -34,13 +35,13 @@ export default function Login() {
     }
     setError('')
     try {
-      const response = await axios.post('http://localhost:8080/api/user/login', {
+        const response = await axios.post(`${API_BASE}/api/user/login`, {
         email,
         password
-      })
+      }, { withCredentials: true })
       console.log('Login successful:', response.data)
       // send verification code to email
-      await axios.post('http://localhost:8080/api/user/send-code', { email })
+      await axios.post(`${API_BASE}/api/user/send-code`, { email })
       // shows verify code popup on success
       setShowVerifyCode(true)
     } catch (err) {
@@ -56,7 +57,7 @@ export default function Login() {
     }
     setCodeError('')
     try {
-      await axios.post('http://localhost:8080/api/user/verify-code', { email, code })
+      await axios.post(`${API_BASE}/api/user/verify-code`, { email, code })
       console.log('Code verified!')
       navigate('/listings')
     } catch (err) {
@@ -77,7 +78,7 @@ export default function Login() {
     }
     setResetError('')
     try {
-      await axios.post('http://localhost:8080/api/user/forgot-password', { email: resetEmail })
+      await axios.post(`${API_BASE}/api/user/forgot-password`, { email: resetEmail })
       setResetSubmitted(true)
     } catch (err) {
       setResetError('Email not found. Please try again.')
@@ -112,7 +113,7 @@ export default function Login() {
             />
             {codeError && <p style={{ color: '#ff4444', fontSize: '13px', marginTop: '8px' }}>{codeError}</p>}
             <button onClick={handleVerifyCode} style={{ marginTop: '24px', width: '100%', padding: '14px', backgroundColor: '#CC0000', color: 'white', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '500', cursor: 'pointer' }}>Verify</button>
-            <p style={{ color: '#aaaaaa', fontSize: '13px', marginTop: '16px', textAlign: 'center' }}>Didn't get it? <span onClick={async () => { await axios.post('http://localhost:8080/api/user/send-code', { email }); console.log('code resent!') }} style={{ color: '#CC0000', cursor: 'pointer' }}>Resend code</span></p>          </div>
+            <p style={{ color: '#aaaaaa', fontSize: '13px', marginTop: '16px', textAlign: 'center' }}>Didn't get it? <span onClick={async () => { await axios.post(`${API_BASE}/api/user/send-code`, { email }); console.log('code resent!') }} style={{ color: '#CC0000', cursor: 'pointer' }}>Resend code</span></p>          </div>
         </div>
       )}
 

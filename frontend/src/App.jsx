@@ -9,6 +9,7 @@ import SellerProfile from './pages/SellerProfile'
 import SellItem from './pages/SellItem'
 import Admin from './pages/Admin'
 import Inbox from './pages/Inbox'
+import OrderConfirmation from './pages/OrderConfirmation'
 
 
 
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/inbox" element={<Inbox />} />
+        <Route path="/order-confirmation" element={<OrderConfirmation />} />
       </Routes>
     </BrowserRouter>
   )

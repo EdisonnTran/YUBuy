@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { FaLock, FaEye, FaEyeSlash, FaTag } from 'react-icons/fa'
 import axios from 'axios'
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+
 export default function ResetPassword() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -29,7 +31,7 @@ export default function ResetPassword() {
     }
     setError('')
     try {
-      await axios.post('http://localhost:8080/api/user/reset-password', { 
+      await axios.post(`${API_BASE}/api/user/reset-password`, { 
         token, 
         password 
       })

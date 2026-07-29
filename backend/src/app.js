@@ -13,7 +13,13 @@ import { ratingRouter } from './api/rating/RatingRouter.js'
 
 const app = express()
 
-app.use(cors())
+const isProduction = process.env.NODE_ENV === 'production'
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+
+app.use(cors({
+    origin: frontendUrl,
+    credentials: true,
+}))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 app.use(
@@ -23,9 +29,9 @@ app.use(
         saveUninitialized: true,
         cookie: {
         httpOnly: true,
-        secure: false,
+        secure: isProduction,
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        sameSite: 'lax',
+        sameSite: isProduction ? 'none' : 'lax',
         }
     })
 )

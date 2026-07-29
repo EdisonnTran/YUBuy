@@ -40,6 +40,8 @@ function normalizeListing(listing) {
 
 const categories = ['All', 'Textbooks', 'Electronics', 'Furniture']
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+
 // TODO: replace with the real logged-in user's id once auth is wired up.
 // This is Alice's id from the seed data, used for local testing.
 const CURRENT_USER_ID = 'cmrdx326n00039u8ovdrdsv60'
@@ -55,7 +57,7 @@ export default function Listings() {
   useEffect(() => {
     async function loadListings() {
       try {
-        const response = await fetch('http://localhost:3000/api/listing')
+        const response = await fetch(`${API_BASE}/api/listing`)
         if (!response.ok) throw new Error(`Request failed: ${response.status}`)
         const data = await response.json()
         setListings(data.map(normalizeListing))
@@ -71,7 +73,7 @@ export default function Listings() {
 
   async function handleAddToWishlist(listingId) {
     try {
-      const response = await fetch('http://localhost:3000/api/wishlist', {
+      const response = await fetch(`${API_BASE}/api/wishlist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: CURRENT_USER_ID, listingId }),

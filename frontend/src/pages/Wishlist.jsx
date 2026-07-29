@@ -14,7 +14,7 @@ import {
 // This is Alice's id from the seed data, used for local testing.
 const CURRENT_USER_ID = 'cmrdx326n00039u8ovdrdsv60'
 
-const API_BASE = 'http://localhost:3000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
 const categoryIcons = {
   Textbooks: FaBook,
