@@ -22,7 +22,7 @@ const locationCoordinates = {
   'The Village':    { lat: 43.7745, lng: -79.4998 },
 }
 
-const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
 // TODO: replace with the real logged-in user's identity once auth is wired up.
 const CURRENT_USER_EMAIL = 'alice@my.yorku.ca'
