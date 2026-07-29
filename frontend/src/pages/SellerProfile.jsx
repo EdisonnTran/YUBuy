@@ -121,10 +121,10 @@ export default function SellerProfile() {
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ color: '#666', fontSize: '14px' }}>Member Since</span>
             <span style={{ color: 'white', fontWeight: '600' }}>
-              {seller.createdAt
-                ? new Date(seller.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-                : 'N/A'}
-            </span>
+                  {seller.createdAt
+                  ? new Date(seller.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+                 : 'N/A'}
+           </span>
           </div>
         </div>
 
