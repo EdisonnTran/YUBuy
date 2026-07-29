@@ -9,7 +9,7 @@ import SellerProfile from './pages/SellerProfile'
 import SellItem from './pages/SellItem'
 import Admin from './pages/Admin'
 import Inbox from './pages/Inbox'
-
+import ResetPassword from './pages/ResetPassword'
 
 
 export default function App() {
@@ -27,6 +27,7 @@ export default function App() {
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/inbox" element={<Inbox />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
     </BrowserRouter>
   )
