@@ -140,7 +140,25 @@ export default function SellerProfile() {
       {/* Right panel — listings */}
       <div style={{ flex: 1, padding: '48px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
 
-        <h1 style={{ color: 'white', fontSize: '24px', fontWeight: 'bold', margin: 0 }}>My Listings</h1>
+        {/* Header row with Sell Item button */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1 style={{ color: 'white', fontSize: '24px', fontWeight: 'bold', margin: 0 }}>My Listings</h1>
+          <button
+            onClick={() => navigate('/sell')}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#CC0000',
+              color: 'white',
+              border: 'none',
+              borderRadius: '10px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+            }}
+          >
+            + Sell Item
+          </button>
+        </div>
 
         {listings.length === 0 && (
           <p style={{ color: '#666', fontSize: '14px' }}>No listings yet.</p>

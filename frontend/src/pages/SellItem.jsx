@@ -72,7 +72,7 @@ export default function SellItem() {
 
   const handleSubmit = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/listing', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/listing`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -86,10 +86,10 @@ export default function SellItem() {
       })
       const data = await res.json()
       console.log('Listing created:', data)
-      navigate('/profile')
     } catch (err) {
       console.error('Failed to create listing:', err)
     }
+    navigate('/profile')
   }
 
   const isFormFilled = title && price && category && condition && location
