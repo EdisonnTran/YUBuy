@@ -3,6 +3,8 @@ import nodemailer from 'nodemailer'
 //Sets up email transporter using Gmail and YUBuy email creds in .env 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
