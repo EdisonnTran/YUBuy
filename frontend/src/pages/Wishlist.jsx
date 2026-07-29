@@ -12,7 +12,7 @@ import {
 
 // TODO: replace with the real logged-in user's id once auth is wired up.
 // This is Alice's id from the seed data, used for local testing.
-const CURRENT_USER_ID = 'cmrdx326n00039u8ovdrdsv60'
+const CURRENT_USER_ID = 'cms6a8of300039krwp8n6hggi'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 

@@ -10,6 +10,8 @@ import SellItem from './pages/SellItem'
 import Admin from './pages/Admin'
 import Inbox from './pages/Inbox'
 import ResetPassword from './pages/ResetPassword'
+import OrderConfirmation from './pages/OrderConfirmation'
+
 
 
 export default function App() {
@@ -28,6 +30,7 @@ export default function App() {
         <Route path="/admin" element={<Admin />} />
         <Route path="/inbox" element={<Inbox />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/order-confirmation" element={<OrderConfirmation />} />
       </Routes>
     </BrowserRouter>
   )

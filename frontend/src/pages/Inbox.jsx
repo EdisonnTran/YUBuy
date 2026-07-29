@@ -4,7 +4,7 @@ import { FaTag, FaUser, FaArrowLeft, FaPaperPlane, FaImage, FaTimes, FaPlus, FaT
 import axios from 'axios'
 
 const MAX_CHARS = 500
-const API_BASE = 'http://localhost:8080/api/chat'
+const API_BASE = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/chat`
 
 // Placeholder users — will be replaced with real API call later
 const mockUsers = [
