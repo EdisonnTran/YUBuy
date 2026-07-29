@@ -131,7 +131,25 @@ export default function SellerProfile() {
       {/* Right panel — listings */}
       <div style={{ flex: 1, padding: '48px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
 
-        <h1 style={{ color: 'white', fontSize: '24px', fontWeight: 'bold', margin: 0 }}>My Listings</h1>
+        {/* Header row with Sell Item button */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1 style={{ color: 'white', fontSize: '24px', fontWeight: 'bold', margin: 0 }}>My Listings</h1>
+          <button
+            onClick={() => navigate('/sell')}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#CC0000',
+              color: 'white',
+              border: 'none',
+              borderRadius: '10px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+            }}
+          >
+            + Sell Item
+          </button>
+        </div>
 
         {/* Active listings */}
         <div>
@@ -140,7 +158,6 @@ export default function SellerProfile() {
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {activeListing.map(listing => (
-              // navigate will be passed here later when listing detail linking is set up
               <ListingCard key={listing.id} listing={listing} />
             ))}
           </div>
@@ -154,7 +171,6 @@ export default function SellerProfile() {
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {soldListings.map(listing => (
-                // navigate will be passed here later when listing detail linking is set up
                 <ListingCard key={listing.id} listing={listing} />
               ))}
             </div>
@@ -166,7 +182,6 @@ export default function SellerProfile() {
   )
 }
 
-// navigate is not passed in yet — will be added later when Edit button links to a page
 function ListingCard({ listing }) {
   return (
     <div style={{
@@ -212,7 +227,6 @@ function ListingCard({ listing }) {
         {listing.status === 'available' && (
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
-              // onClick will navigate to edit listing page — to be connected later
               onClick={() => console.log('Edit listing — connect to backend later')}
               style={{
                 padding: '8px 14px',
@@ -230,7 +244,6 @@ function ListingCard({ listing }) {
               <FaEdit /> Edit
             </button>
             <button
-              // onClick will call DELETE /api/v1/listings/:id — to be connected later
               onClick={() => console.log('Delete listing — connect to backend later')}
               style={{
                 padding: '8px 14px',
