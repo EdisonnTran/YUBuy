@@ -35,13 +35,13 @@ export default function Login() {
     }
     setError('')
     try {
-      const response = await axios.post('http://localhost:8080/api/user/login', {
+        const response = await axios.post(`${API_BASE}/api/user/login`, {
         email,
         password
-      })
+      }, { withCredentials: true })
       console.log('Login successful:', response.data)
       // send verification code to email
-      await axios.post(`${API_BASE}/api/user/login`, {email, password})
+      await axios.post(`${API_BASE}/api/user/send-code`, { email })
       // shows verify code popup on success
       setShowVerifyCode(true)
     } catch (err) {
@@ -113,7 +113,7 @@ export default function Login() {
             />
             {codeError && <p style={{ color: '#ff4444', fontSize: '13px', marginTop: '8px' }}>{codeError}</p>}
             <button onClick={handleVerifyCode} style={{ marginTop: '24px', width: '100%', padding: '14px', backgroundColor: '#CC0000', color: 'white', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '500', cursor: 'pointer' }}>Verify</button>
-            <p style={{ color: '#aaaaaa', fontSize: '13px', marginTop: '16px', textAlign: 'center' }}>Didn't get it? <span onClick={async () => { await axios.post('http://localhost:8080/api/user/send-code', { email }); console.log('code resent!') }} style={{ color: '#CC0000', cursor: 'pointer' }}>Resend code</span></p>          </div>
+            <p style={{ color: '#aaaaaa', fontSize: '13px', marginTop: '16px', textAlign: 'center' }}>Didn't get it? <span onClick={async () => { await axios.post(`${API_BASE}/api/user/send-code`, { email }); console.log('code resent!') }} style={{ color: '#CC0000', cursor: 'pointer' }}>Resend code</span></p>          </div>
         </div>
       )}
 
