@@ -145,6 +145,7 @@ export default function Listings() {
           </span>
           <button
             type="button"
+            onClick={() => navigate('/sell')}
             style={{
               display: 'flex',
               alignItems: 'center',
