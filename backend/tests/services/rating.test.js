@@ -10,7 +10,7 @@ describe('Rating - Tests', () => {
 
     describe('GET /api/rating/listing/:id', () => {
         test('should return 200 and the rating corresponding to the listingId', async () => {
-            prismaMock.rating.findUnique.mockResolvedValue({
+            prismaMock.rating.findMany.mockResolvedValue({
                 id: 1, score: 5, comment: "A great laptop!", listingId: 25, authorId: 500, subjectId:501
             })
 
