@@ -15,6 +15,9 @@
       "<rootDir>/tests/singleton.js"
     ]
   },
+  "nodemonConfig": {
+    "ignore": ["src/generated/**"]
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
