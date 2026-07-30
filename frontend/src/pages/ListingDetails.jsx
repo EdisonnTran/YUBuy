@@ -364,7 +364,7 @@ export default function ListingDetail() {
 
         <button
           type="button"
-          onClick={() => console.log('Message seller - connect to backend later')}
+          onClick={() => navigate(`/inbox?listingId=${listing.id}&sellerId=${listing.seller.id}`)}
           style={primaryButtonStyle}
         >
           <FaEnvelope />
