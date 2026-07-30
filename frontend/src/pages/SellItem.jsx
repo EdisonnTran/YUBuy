@@ -122,6 +122,7 @@ export default function SellItem() {
           description,
           price: parseFloat(price),
           proximity: location,
+          condition,
           sellerId: currentUser.id,
           categoryId: category,
         })

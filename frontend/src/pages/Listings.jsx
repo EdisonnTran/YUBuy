@@ -22,9 +22,6 @@ function iconForCategory(categoryName) {
   return CATEGORY_ICONS[categoryName] || FaTag
 }
 
-// Maps a listing from GET /api/listing into the shape this page renders.
-// NOTE: the Listing model has no `condition` field yet, so it falls back to
-// 'Unspecified'. `proximity` is used as the location.
 function normalizeListing(listing) {
   const categoryName = listing.category?.name || 'Other'
   return {
@@ -42,8 +39,6 @@ const categories = ['All', 'Textbooks', 'Electronics', 'Furniture']
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
-// TODO: replace with the real logged-in user's id once auth is wired up.
-// This is Alice's id from the seed data, used for local testing.
 const CURRENT_USER_ID = 'cms6a8of300039krwp8n6hggi'
 
 export default function Listings() {
@@ -87,61 +82,46 @@ export default function Listings() {
 
   const filteredListings = useMemo(() => {
     const query = search.trim().toLowerCase()
-
     return listings.filter((listing) => {
-      const matchesCategory =
-        activeCategory === 'All' || listing.category === activeCategory
-      const matchesSearch =
-        !query ||
+      const matchesCategory = activeCategory === 'All' || listing.category === activeCategory
+      const matchesSearch = !query ||
         listing.title.toLowerCase().includes(query) ||
         listing.category.toLowerCase().includes(query)
-
       return matchesCategory && matchesSearch
     })
   }, [activeCategory, search, listings])
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        backgroundColor: '#2a2a2a',
-        color: 'white',
-        textAlign: 'left',
-      }}
-    >
-      <header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '24px',
-          padding: '22px 48px',
-          borderBottom: '1px solid #444444',
-          flexWrap: 'wrap',
-        }}
-      >
+    <div style={{ minHeight: '100vh', backgroundColor: '#2a2a2a', color: 'white', textAlign: 'left' }}>
+      <header style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '24px',
+        padding: '22px 48px',
+        borderBottom: '1px solid #444444',
+        flexWrap: 'wrap',
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <FaTag style={{ fontSize: '28px', color: 'rgba(204,0,0,0.55)' }} />
-          <h2
-            style={{
-              color: '#CC0000',
-              fontSize: '28px',
-              fontWeight: 'bold',
-              margin: 0,
-            }}
-          >
-            YU
-            <span style={{ color: 'white', fontWeight: 400 }}>Buy</span>
+          <h2 style={{ color: '#CC0000', fontSize: '28px', fontWeight: 'bold', margin: 0 }}>
+            YU<span style={{ color: 'white', fontWeight: 400 }}>Buy</span>
           </h2>
         </div>
 
-     <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
           <span style={{ color: '#CC0000', fontWeight: 700 }}>Browse</span>
           <span
             style={{ color: '#aaaaaa', fontWeight: 600, cursor: 'pointer' }}
             onClick={() => navigate('/wishlist')}
           >
             Wishlist
+          </span>
+          <span
+            style={{ color: '#aaaaaa', fontWeight: 600, cursor: 'pointer' }}
+            onClick={() => navigate('/profile')}
+          >
+            Profile
           </span>
           <button
             type="button"
@@ -170,50 +150,17 @@ export default function Listings() {
         </nav>
       </header>
 
-      <section
-        style={{
-          backgroundColor: '#CC0000',
-          padding: '54px 48px',
-          textAlign: 'center',
-        }}
-      >
-        <FaShoppingBag
-          style={{
-            fontSize: '46px',
-            color: 'rgba(255,255,255,0.3)',
-            marginBottom: '12px',
-          }}
-        />
-        <h1
-          style={{
-            color: 'white',
-            fontSize: '36px',
-            fontWeight: 700,
-            margin: '0 0 10px',
-          }}
-        >
+      <section style={{ backgroundColor: '#CC0000', padding: '54px 48px', textAlign: 'center' }}>
+        <FaShoppingBag style={{ fontSize: '46px', color: 'rgba(255,255,255,0.3)', marginBottom: '12px' }} />
+        <h1 style={{ color: 'white', fontSize: '36px', fontWeight: 700, margin: '0 0 10px' }}>
           Find what you need
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '17px' }}>
           Buy from students across the York University community.
         </p>
 
-        <div
-          style={{
-            position: 'relative',
-            maxWidth: '620px',
-            margin: '28px auto 0',
-          }}
-        >
-          <FaSearch
-            style={{
-              position: 'absolute',
-              left: '18px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: 'white',
-            }}
-          />
+        <div style={{ position: 'relative', maxWidth: '620px', margin: '28px auto 0' }}>
+          <FaSearch style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', color: 'white' }} />
           <input
             type="search"
             placeholder="Search textbooks, electronics, furniture..."
@@ -235,33 +182,24 @@ export default function Listings() {
       </section>
 
       <main style={{ padding: '38px 48px 60px' }}>
-        
+
         <div style={{ marginBottom: '32px' }}>
           <h2 style={{ color: 'white', fontSize: '20px', fontWeight: '700', margin: '0 0 16px' }}>
             Listings near you
           </h2>
           <ListingsMap listings={filteredListings} />
         </div>
-        
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '20px',
-            marginBottom: '28px',
-            flexWrap: 'wrap',
-          }}
-        >
+
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '20px',
+          marginBottom: '28px',
+          flexWrap: 'wrap',
+        }}>
           <div>
-            <h2
-              style={{
-                color: 'white',
-                fontSize: '26px',
-                fontWeight: 700,
-                margin: '0 0 5px',
-              }}
-            >
+            <h2 style={{ color: 'white', fontSize: '26px', fontWeight: 700, margin: '0 0 5px' }}>
               Latest listings
             </h2>
             <p style={{ color: '#aaaaaa', fontSize: '15px' }}>
@@ -273,7 +211,6 @@ export default function Listings() {
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             {categories.map((category) => {
               const isActive = activeCategory === category
-
               return (
                 <button
                   key={category}
@@ -305,16 +242,13 @@ export default function Listings() {
             {error}
           </div>
         ) : filteredListings.length > 0 ? (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(245px, 1fr))',
-              gap: '20px',
-            }}
-          >
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(245px, 1fr))',
+            gap: '20px',
+          }}>
             {filteredListings.map((listing) => {
               const ListingIcon = listing.icon
-
               return (
                 <article
                   key={listing.id}
@@ -339,7 +273,7 @@ export default function Listings() {
                 >
                   <button
                     type="button"
-                    onClick={() => handleAddToWishlist(listing.id)}
+                    onClick={(e) => { e.stopPropagation(); handleAddToWishlist(listing.id) }}
                     title="Add to wishlist"
                     style={{
                       position: 'absolute',
@@ -358,85 +292,66 @@ export default function Listings() {
                       cursor: 'pointer',
                     }}
                   >
-                 <FaHeart />
+                    <FaHeart />
                   </button>
 
-                  <div
-                    style={{
-                      height: '155px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: '#a4a4a4',
-                    }}
-                  >
-                    <ListingIcon
-                      style={{ fontSize: '58px', color: 'rgba(255,255,255,0.7)' }}
-                    />
+                  <div style={{
+                    height: '155px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#a4a4a4',
+                  }}>
+                    <ListingIcon style={{ fontSize: '58px', color: 'rgba(255,255,255,0.7)' }} />
                   </div>
+
                   <div style={{ padding: '19px' }}>
-                    <span
-                      style={{
-                        color: '#CC0000',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                      }}
-                    >
+                    <span style={{
+                      color: '#CC0000',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                    }}>
                       {listing.category}
                     </span>
-                    <h3
-                      style={{
-                        minHeight: '48px',
-                        color: 'white',
-                        fontSize: '18px',
-                        lineHeight: 1.35,
-                        margin: '8px 0 12px',
-                      }}
-                    >
+                    <h3 style={{
+                      minHeight: '48px',
+                      color: 'white',
+                      fontSize: '18px',
+                      lineHeight: 1.35,
+                      margin: '8px 0 12px',
+                    }}>
                       {listing.title}
                     </h3>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '12px',
-                      }}
-                    >
-                      <strong style={{ color: 'white', fontSize: '22px' }}>
-                        ${listing.price}
-                      </strong>
-                        <span
-                          style={{
-                            padding: '5px 9px',
-                            borderRadius: '6px',
-                            backgroundColor:
-                              ['like new', 'excellent'].includes(listing.condition.toLowerCase())
-                                ? 'rgba(34, 197, 94, 0.15)'
-                                : ['good', 'fair'].includes(listing.condition.toLowerCase())
-                                ? 'rgba(234, 179, 8, 0.15)'
-                                : 'rgba(204, 0, 0, 0.15)',
-                            color:
-                              ['like new', 'excellent'].includes(listing.condition.toLowerCase())
-                                ? '#22c55e'
-                                : ['good', 'fair'].includes(listing.condition.toLowerCase())
-                                ? '#eab308'
-                                : '#ff7777',
-                            fontSize: '12px',
-                          }}
-                        >
-                          {listing.condition}
-                        </span>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '12px',
+                    }}>
+                      <strong style={{ color: 'white', fontSize: '22px' }}>${listing.price}</strong>
+                      <span style={{
+                        padding: '5px 9px',
+                        borderRadius: '6px',
+                        backgroundColor:
+                          ['like new', 'excellent'].includes(listing.condition.toLowerCase())
+                            ? 'rgba(34, 197, 94, 0.15)'
+                            : ['good', 'fair'].includes(listing.condition.toLowerCase())
+                            ? 'rgba(234, 179, 8, 0.15)'
+                            : 'rgba(204, 0, 0, 0.15)',
+                        color:
+                          ['like new', 'excellent'].includes(listing.condition.toLowerCase())
+                            ? '#22c55e'
+                            : ['good', 'fair'].includes(listing.condition.toLowerCase())
+                            ? '#eab308'
+                            : '#ff7777',
+                        fontSize: '12px',
+                      }}>
+                        {listing.condition}
+                      </span>
                     </div>
-                    <p
-                      style={{
-                        color: '#aaaaaa',
-                        fontSize: '13px',
-                        marginTop: '13px',
-                      }}
-                    >
+                    <p style={{ color: '#aaaaaa', fontSize: '13px', marginTop: '13px' }}>
                       {listing.location}
                     </p>
                   </div>
@@ -445,21 +360,17 @@ export default function Listings() {
             })}
           </div>
         ) : (
-          <div
-            style={{
-              padding: '60px 24px',
-              border: '1px dashed #555555',
-              borderRadius: '14px',
-              color: '#aaaaaa',
-              textAlign: 'center',
-            }}
-          >
+          <div style={{
+            padding: '60px 24px',
+            border: '1px dashed #555555',
+            borderRadius: '14px',
+            color: '#aaaaaa',
+            textAlign: 'center',
+          }}>
             No listings match your search.
           </div>
         )}
       </main>
-
-      
     </div>
   )
 }

@@ -9,6 +9,9 @@ userRouter.get('/', userController.getAll)
 // GET: retrieve the currently logged-in user from the session
 userRouter.get('/me', userController.getCurrentUser)
 
+// GET: retrieve the currently logged-in user from session
+userRouter.get('/me', userController.getMe)
+
 // GET: retrieve a user by its id
 userRouter.get('/:id', userController.getOne)
 
@@ -32,3 +35,4 @@ userRouter.post('/send-code', userController.sendVerificationCode)
 
 // POST: verifies the 6 digit code once entered by user
 userRouter.post('/verify-code', userController.verifyCode)
+

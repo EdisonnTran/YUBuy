@@ -17,7 +17,6 @@ export default function SellerProfile() {
         setLoading(true)
         setError(null)
 
-        // Find user thats logged in 
         const userRes = await fetch(`${API_BASE}/api/user/me`, {
           credentials: 'include',
         })
@@ -28,7 +27,6 @@ export default function SellerProfile() {
 
         const userData = await userRes.json()
 
-        // Find user's listings using their real ID.
         const listingsRes = await fetch(`${API_BASE}/api/listing/seller/${userData.id}`, {
           credentials: 'include',
         })
@@ -49,6 +47,21 @@ export default function SellerProfile() {
 
     loadProfile()
   }, [])
+
+  const handleDelete = async (listingId) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/listing`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id: listingId }),
+      })
+      if (!res.ok) throw new Error('Failed to delete')
+      setListings(prev => prev.filter(l => l.id !== listingId))
+    } catch (err) {
+      console.error('Failed to delete listing:', err)
+    }
+  }
 
   if (loading) {
     return (
@@ -105,7 +118,6 @@ export default function SellerProfile() {
             <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>{seller.email}</p>
           </div>
 
-          {/* Rating placeholder — connect to ratings API later */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <FaStar style={{ color: '#f5a623', fontSize: '16px' }} />
             <span style={{ color: '#aaaaaa', fontSize: '13px' }}>No ratings yet</span>
@@ -127,17 +139,14 @@ export default function SellerProfile() {
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ color: '#666', fontSize: '14px' }}>Member Since</span>
             <span style={{ color: 'white', fontWeight: '600' }}>
-                  {seller.createdAt
-                  ? new Date(seller.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
-                 : 'N/A'}
-           </span>
+              {seller.createdAt
+                ? new Date(seller.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+                : 'N/A'}
+            </span>
           </div>
         </div>
 
-        <button
-          onClick={() => navigate(-1)}
-          style={secondaryButtonStyle}
-        >
+        <button onClick={() => navigate(-1)} style={secondaryButtonStyle}>
           ← Back
         </button>
 
@@ -146,7 +155,6 @@ export default function SellerProfile() {
       {/* Right panel — listings */}
       <div style={{ flex: 1, padding: '48px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
 
-        {/* Header row with Sell Item button */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h1 style={{ color: 'white', fontSize: '24px', fontWeight: 'bold', margin: 0 }}>My Listings</h1>
           <button
@@ -170,7 +178,6 @@ export default function SellerProfile() {
           <p style={{ color: '#666', fontSize: '14px' }}>No listings yet.</p>
         )}
 
-        {/* Active listings */}
         {activeListings.length > 0 && (
           <div>
             <h2 style={{ color: '#aaaaaa', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 16px' }}>
@@ -178,13 +185,12 @@ export default function SellerProfile() {
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {activeListings.map(listing => (
-                <ListingCard key={listing.id} listing={listing} navigate={navigate} />
+                <ListingCard key={listing.id} listing={listing} navigate={navigate} onDelete={handleDelete} />
               ))}
             </div>
           </div>
         )}
 
-        {/* Sold listings */}
         {soldListings.length > 0 && (
           <div>
             <h2 style={{ color: '#aaaaaa', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 16px' }}>
@@ -192,7 +198,7 @@ export default function SellerProfile() {
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {soldListings.map(listing => (
-                <ListingCard key={listing.id} listing={listing} navigate={navigate} />
+                <ListingCard key={listing.id} listing={listing} navigate={navigate} onDelete={handleDelete} />
               ))}
             </div>
           </div>
@@ -203,24 +209,24 @@ export default function SellerProfile() {
   )
 }
 
-function ListingCard({ listing, navigate }) {
+function ListingCard({ listing, navigate, onDelete }) {
   const condition = listing.condition || 'Unspecified'
 
   return (
-    <div style={{
-      backgroundColor: '#2a2a2a',
-      borderRadius: '12px',
-      padding: '20px',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      opacity: listing.status !== 'ACTIVE' ? 0.6 : 1,
-      cursor: 'pointer',
-    }}
+    <div
+      style={{
+        backgroundColor: '#2a2a2a',
+        borderRadius: '12px',
+        padding: '20px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        opacity: listing.status !== 'ACTIVE' ? 0.6 : 1,
+        cursor: 'pointer',
+      }}
       onClick={() => navigate(`/listings/${listing.id}`)}
     >
 
-      {/* Left side info */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <p style={{ color: 'white', fontWeight: '600', fontSize: '16px', margin: 0 }}>{listing.title}</p>
 
@@ -258,8 +264,8 @@ function ListingCard({ listing, navigate }) {
         </p>
       </div>
 
-      {/* Right side price + actions */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}
+      <div
+        style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}
         onClick={e => e.stopPropagation()}
       >
         <p style={{ color: '#CC0000', fontSize: '20px', fontWeight: 'bold', margin: 0 }}>${listing.price}</p>
@@ -284,7 +290,7 @@ function ListingCard({ listing, navigate }) {
               <FaEdit /> Edit
             </button>
             <button
-              onClick={() => console.log('Delete listing — connect to backend later')}
+              onClick={() => onDelete(listing.id)}
               style={{
                 padding: '8px 14px',
                 backgroundColor: 'rgba(204, 0, 0, 0.15)',

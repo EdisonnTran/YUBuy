@@ -170,6 +170,19 @@ export class UserController {
         } catch (error) { next(error) }
     }
 
+    getMe = async (_req, res, next) => {
+    try {
+        if (!_req.session || !_req.session.user_id) {
+            return res.status(401).send({ message: 'Not logged in' })
+        }
+        const user = await userService.getOne(_req.session.user_id)
+        if (!user) return res.status(404).send({ message: 'User not found' })
+        res.status(200).send(user)
+    } catch (error) {
+        next(error)
+    }
+}
+
 }
 
 export const userController = new UserController()
