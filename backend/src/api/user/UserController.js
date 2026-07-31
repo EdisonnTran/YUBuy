@@ -139,13 +139,14 @@ export class UserController {
     }
     resetPassword = async (_req, res, next) => {
         try {
-            const { token, password } = _req.body
-            const data = resetTokens[token]
-            if (!data) return res.status(400).send({ message: 'Invalid token' })
-            if (Date.now() > data.expiry) return res.status(400).send({ message: 'Token expired' })
-            await userService.updatePassword(data.email, password)
-            delete resetTokens[token]
-            res.status(200).send({ message: 'Password reset successful' })
+         const { token, password } = _req.body
+         const data = resetTokens[token]
+         if (!data) return res.status(400).send({ message: 'Invalid token' })
+         if (Date.now() > data.expiry) return res.status(400).send({ message: 'Token expired' })
+         const hashed_password = await bcrypt.hash(password, this.#saltRounds)
+         await userService.updatePassword(data.email, hashed_password)
+         delete resetTokens[token]
+         res.status(200).send({ message: 'Password reset successful' })
         } catch (error) { next(error) }
     }
 
