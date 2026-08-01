@@ -39,7 +39,17 @@ const categories = ['All', 'Textbooks', 'Electronics', 'Furniture']
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
-const CURRENT_USER_ID = 'cms6a8of300039krwp8n6hggi'
+// Ask the backend who the logged-in user is (reads the session cookie).
+async function getCurrentUserId() {
+  try {
+    const res = await fetch(`${API_BASE}/api/user/me`, { credentials: 'include' })
+    if (!res.ok) return null
+    const user = await res.json()
+    return user.id
+  } catch {
+    return null
+  }
+}
 
 export default function Listings() {
   const [search, setSearch] = useState('')
@@ -68,10 +78,16 @@ export default function Listings() {
 
   async function handleAddToWishlist(listingId) {
     try {
+      const userId = await getCurrentUserId()
+      if (!userId) {
+        alert('Please log in to save items.')
+        return
+      }
       const response = await fetch(`${API_BASE}/api/wishlist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: CURRENT_USER_ID, listingId }),
+        credentials: 'include',
+        body: JSON.stringify({ userId, listingId }),
       })
       if (!response.ok) throw new Error(`Request failed: ${response.status}`)
       alert('Added to wishlist!')
