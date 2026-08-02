@@ -361,7 +361,22 @@ export default function ListingDetail() {
             </p>
           )}
         </form>
-
+        
+        <button
+          type="button"
+          onClick={() => navigate('/checkout', {
+            state: {
+              listingId: listing.id,
+              title: listing.title,
+              price: listing.price,
+            }
+          })}
+          style={primaryButtonStyle}
+          disabled={listing.status !== 'ACTIVE'}
+        >
+          Buy Now
+        </button>
+        
         <button
           type="button"
           onClick={() => navigate(`/inbox?listingId=${listing.id}&sellerId=${listing.seller.id}`)}

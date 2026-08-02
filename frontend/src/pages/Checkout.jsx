@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 const labelStyle = {
   color: 'white',
@@ -32,6 +32,19 @@ const fieldGroupStyle = {
 }
 
 export default function Checkout() {
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  // Listing info passed from the "Buy Now" button on ListingDetails.
+  // If someone lands here directly without picking a listing, fall back
+  // gracefully instead of showing broken/blank pricing.
+  const { listingId, title, price } = location.state || {}
+  const subtotal = price ? parseFloat(price) : 0
+  // Local campus pickup — no shipping or tax for now.
+  const shipping = 0
+  const tax = 0
+  const total = subtotal + shipping + tax
+
   // personal details
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -48,8 +61,6 @@ export default function Checkout() {
 
   // errors
   const [errors, setErrors] = useState({})
-
-  const navigate = useNavigate()
 
   // -- input handlers --
 
@@ -133,18 +144,23 @@ export default function Checkout() {
     return newErrors
   }
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     const newErrors = validate()
     setErrors(newErrors)
 
-    if (Object.keys(newErrors).length > 0) return // stop if any errors
+    if (Object.keys(newErrors).length > 0) return
 
-    console.log('Checkout clicked — connect to backend later', {
-      firstName, lastName, streetName, city,
-      postalCode, country, phoneNumber, cardNumber, expirationDate, securityCode
-    })
-    navigate('/order-confirmation')
-  }
+    try {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/listing/${listingId}/purchase`, {
+            method: 'PATCH',
+        })
+        if (!res.ok) throw new Error(`Purchase failed: ${res.status}`)
+        navigate('/order-confirmation', { state: { title } })
+    } catch (err) {
+        console.error('Checkout failed:', err)
+        setErrors({ checkout: 'Could not complete checkout. Please try again.' })
+    }
+}
 
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
@@ -273,15 +289,29 @@ export default function Checkout() {
             Order Summary
           </h2>
 
+          {title && (
+            <p style={{ color: 'white', textAlign: 'center', fontSize: '15px', marginTop: '-10px', marginBottom: '20px' }}>
+              {title}
+            </p>
+          )}
+
           <div style={{ ...fieldGroupStyle, marginBottom: '36px' }}>
             <label style={{ ...labelStyle, textAlign: 'center' }}>Subtotal</label>
-            <div style={{ ...inputStyle, textAlign: 'center', color: '#181313', fontWeight: '600' }}>$0.00</div>
+            <div style={{ ...inputStyle, textAlign: 'center', color: '#181313', fontWeight: '600' }}>
+              ${subtotal.toFixed(2)}
+            </div>
             <label style={{ ...labelStyle, textAlign: 'center', marginTop: '12px' }}>Shipping</label>
-            <div style={{ ...inputStyle, textAlign: 'center', color: '#181313', fontWeight: '600' }}>$0.00</div>
+            <div style={{ ...inputStyle, textAlign: 'center', color: '#181313', fontWeight: '600' }}>
+              ${shipping.toFixed(2)}
+            </div>
             <label style={{ ...labelStyle, textAlign: 'center', marginTop: '12px' }}>Tax</label>
-            <div style={{ ...inputStyle, textAlign: 'center', color: '#181313', fontWeight: '600' }}>$0.00</div>
+            <div style={{ ...inputStyle, textAlign: 'center', color: '#181313', fontWeight: '600' }}>
+              ${tax.toFixed(2)}
+            </div>
             <label style={{ ...labelStyle, textAlign: 'center', marginTop: '12px' }}>You Pay</label>
-            <div style={{ ...inputStyle, textAlign: 'center', color: '#181313', fontWeight: '600' }}>$0.00</div>
+            <div style={{ ...inputStyle, textAlign: 'center', color: '#181313', fontWeight: '600' }}>
+              ${total.toFixed(2)}
+            </div>
           </div>
 
           <h2 style={{ color: 'white', fontSize: '20px', fontWeight: 'bold', textAlign: 'center', marginTop: 0, marginBottom: '20px' }}>

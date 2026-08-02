@@ -69,11 +69,35 @@ export class ListingController {
     deleteOne = async (_req, res, next) => {
         try {
             const listing_id = _req.body.id
-            const serivceResponse = await listingSerivce.deleteOne(listing_id)
+            const serivceResponse = await listingService.deleteOne(listing_id)
             res.status(200).send(serviceResponse)
         }
         catch (error) {
             next(error);
+        }
+    }
+
+    purchase = async (_req, res, next) => {
+        try {
+            const listing_id = _req.params.id
+
+            if (!listing_id || !listing_id.trim()) {
+                return res.status(400).json({ error: 'A valid listing ID is required' })
+            }
+
+            const listing = await listingService.getOne(listing_id)
+            if (!listing) {
+                return res.status(404).json({ error: 'Listing not found' })
+            }
+            if (listing.status !== 'ACTIVE') {
+                return res.status(400).json({ error: 'This listing is no longer available' })
+            }
+
+            const serviceResponse = await listingService.purchase(listing_id)
+            res.status(200).send(serviceResponse)
+        }
+        catch (error) {
+            next(error)
         }
     }
 }

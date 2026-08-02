@@ -73,6 +73,13 @@ export class ListingService {
             where: {id: listing_id}
         })
     }
+    
+    purchase = async (listing_id) => {
+    return await prisma.listing.update({
+        where: { id: listing_id },
+        data: { status: 'SOLD' }
+    })
+}
 
 }
 
