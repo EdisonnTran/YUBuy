@@ -52,6 +52,22 @@ export class ChatService {
         const filePath = `chat/chat_${chatId}.jsonl`
         return fileSystemClient.getFileClient(filePath)
     }
+
+    getChatsForUser = async (userId) => {
+    const directoryClient = fileSystemClient.getDirectoryClient('chat')
+    const chatIds = []
+
+    for await (const item of directoryClient.listPaths()) {
+        if (item.name && item.name.includes(userId)) {
+            // Extract chatId from filename: chat/chat_<chatId>.jsonl
+            const fileName = item.name.split('/').pop()
+            const chatId = fileName.replace('chat_', '').replace('.jsonl', '')
+            chatIds.push(chatId)
+        }
+    }
+
+    return chatIds
+}
 }
 
 export const chatService = new ChatService()
