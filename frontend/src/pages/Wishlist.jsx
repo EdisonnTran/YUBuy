@@ -10,11 +10,20 @@ import {
   FaUserCircle,
 } from 'react-icons/fa'
 
-// TODO: replace with the real logged-in user's id once auth is wired up.
-// This is Alice's id from the seed data, used for local testing.
-const CURRENT_USER_ID = 'cms6a8of300039krwp8n6hggi'
-
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+
+// Ask the backend who the logged-in user is (reads the session cookie).
+// Returns the user's id, or null if nobody is logged in.
+async function getCurrentUserId() {
+  try {
+    const res = await fetch(`${API_BASE}/api/user/me`, { credentials: 'include' })
+    if (!res.ok) return null
+    const user = await res.json()
+    return user.id
+  } catch {
+    return null
+  }
+}
 
 const categoryIcons = {
   Textbooks: FaBook,
@@ -38,7 +47,16 @@ export default function Wishlist() {
     setError(null)
 
     try {
-      const response = await fetch(`${API_BASE}/api/wishlist/${CURRENT_USER_ID}`)
+      const userId = await getCurrentUserId()
+      if (!userId) {
+        // Nobody logged in -> empty wishlist, not an error.
+        setItems([])
+        return
+      }
+
+      const response = await fetch(`${API_BASE}/api/wishlist/${userId}`, {
+        credentials: 'include',
+      })
 
       if (!response.ok) {
         throw new Error(`Request failed with status ${response.status}`)
@@ -57,10 +75,12 @@ export default function Wishlist() {
     setRemovingId(listingId)
 
     try {
+      const userId = await getCurrentUserId()
       const response = await fetch(`${API_BASE}/api/wishlist`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: CURRENT_USER_ID, listingId }),
+        credentials: 'include',
+        body: JSON.stringify({ userId, listingId }),
       })
 
       if (!response.ok) {
