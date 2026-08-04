@@ -16,16 +16,13 @@ L.Icon.Default.mergeOptions({
 })
 
 const locationCoordinates = {
-  'Keele Campus':   { lat: 43.7735, lng: -79.5019 },
+  'Keele Campus': { lat: 43.7735, lng: -79.5019 },
   'Glendon Campus': { lat: 43.7360, lng: -79.3758 },
-  'York Lanes':     { lat: 43.7738, lng: -79.5023 },
-  'The Village':    { lat: 43.7745, lng: -79.4998 },
+  'York Lanes': { lat: 43.7738, lng: -79.5023 },
+  'The Village': { lat: 43.7745, lng: -79.4998 },
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
-
-// TODO: replace with the real logged-in user's identity once auth is wired up.
-const CURRENT_USER_EMAIL = 'alice@my.yorku.ca'
 
 function formatDate(value) {
   return new Intl.DateTimeFormat('en-US', {
@@ -59,6 +56,9 @@ export default function ListingDetail() {
   const [ratingMessage, setRatingMessage] = useState('')
 
   const [uploadingImage, setUploadingImage] = useState(false)
+
+  // The real logged-in user's email, fetched from the session via /api/user/me.
+  const [currentUserEmail, setCurrentUserEmail] = useState(null)
 
   // Reads the chosen image file as base64 and saves it to this listing via
   // POST /api/image. Images are stored as base64 data URIs so they persist
@@ -107,11 +107,16 @@ export default function ListingDetail() {
       setError(null)
 
       try {
+        // Rating lookup/submission uses the real account.
+        const meResponse = await fetch(`${API_BASE}/api/user/me`, { credentials: 'include' })
+        const email = meResponse.ok ? (await meResponse.json()).email : null
+        setCurrentUserEmail(email)
+
         const [listingResponse, ratingResponse] = await Promise.all([
           fetch(`${API_BASE}/api/listing/${id}`),
           fetch(
             `${API_BASE}/api/rating/listing/${id}?authorEmail=${encodeURIComponent(
-              CURRENT_USER_EMAIL,
+              email || '',
             )}`,
           ),
         ])
@@ -144,6 +149,11 @@ export default function ListingDetail() {
   async function handleSubmitRating(event) {
     event.preventDefault()
 
+    if (!currentUserEmail) {
+      setRatingMessage('You must be logged in to rate this listing.')
+      return
+    }
+
     if (!selectedScore) {
       setRatingMessage('Choose a star rating first.')
       return
@@ -158,7 +168,7 @@ export default function ListingDetail() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           listingId: id,
-          authorEmail: CURRENT_USER_EMAIL,
+          authorEmail: currentUserEmail,
           score: selectedScore,
           comment: comment.trim(),
         }),
@@ -245,7 +255,7 @@ export default function ListingDetail() {
           <FaImage style={{ fontSize: '14px' }} />
           {uploadingImage ? 'Uploading...' : 'Add a photo'}
           <input type="file" accept="image/*" onChange={handleImageUpload}
-                 disabled={uploadingImage} style={{ display: 'none' }} />
+            disabled={uploadingImage} style={{ display: 'none' }} />
         </label>
 
         {/* Title, date, price and status badge */}
@@ -361,7 +371,35 @@ export default function ListingDetail() {
             </p>
           )}
         </form>
-        
+        {ratingSummary.ratings && ratingSummary.ratings.length > 0 && (
+          <div style={panelStyle}>
+            <h2 style={panelHeadingStyle}>Reviews</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {ratingSummary.ratings.map((r) => (
+                <div key={r.id} style={{ borderTop: '1px solid #333', paddingTop: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: 'white', fontWeight: '600', fontSize: '14px' }}>
+                      {r.author?.name || 'Anonymous'}
+                    </span>
+                    <span style={{ color: '#666', fontSize: '12px' }}>
+                      {formatDate(r.createdAt)}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '2px', margin: '4px 0' }}>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <FaStar key={n} style={{ fontSize: '12px', color: n <= r.score ? '#f5a623' : '#444' }} />
+                    ))}
+                  </div>
+                  {r.comment && (
+                    <p style={{ color: '#aaaaaa', fontSize: '14px', margin: '4px 0 0' }}>
+                      {r.comment}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <button
           type="button"
           onClick={() => navigate('/checkout', {
@@ -376,7 +414,7 @@ export default function ListingDetail() {
         >
           Buy Now
         </button>
-        
+
         <button
           type="button"
           onClick={() => navigate(`/inbox?listingId=${listing.id}&sellerId=${listing.seller.id}`)}
