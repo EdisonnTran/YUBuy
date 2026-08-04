@@ -163,7 +163,7 @@ describe('UserController.resetPassword', () => {
 
         expect(userService.updatePassword).toHaveBeenCalledWith(
             'yubuy.noreply@gmail.com',
-            'newpassword1'
+            expect.stringMatching(/^\$2[aby]\$/)
         )
         expect(res.status).toHaveBeenCalledWith(200)
         expect(res.send).toHaveBeenCalledWith({ message: 'Password reset successful' })
