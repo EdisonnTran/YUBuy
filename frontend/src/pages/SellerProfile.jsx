@@ -8,6 +8,7 @@ export default function SellerProfile() {
   const navigate = useNavigate()
   const [seller, setSeller] = useState(null)
   const [listings, setListings] = useState([])
+  const [sellerRatings, setSellerRatings] = useState({ average: null, count: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -34,6 +35,17 @@ export default function SellerProfile() {
         if (!listingsRes.ok) throw new Error('Could not load listings')
 
         const listingsData = await listingsRes.json()
+
+        // Ratings this seller has received across all their listings.
+        const ratingsRes = await fetch(`${API_BASE}/api/rating/subject/${userData.id}`, {
+          credentials: 'include',
+        })
+        if (ratingsRes.ok) {
+          const ratingsData = await ratingsRes.json()
+          const count = ratingsData.length
+          const average = count > 0 ? ratingsData.reduce((sum, r) => sum + r.score, 0) / count : null
+          setSellerRatings({ average, count })
+        }
 
         setSeller(userData)
         setListings(listingsData)
@@ -120,7 +132,11 @@ export default function SellerProfile() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <FaStar style={{ color: '#f5a623', fontSize: '16px' }} />
-            <span style={{ color: '#aaaaaa', fontSize: '13px' }}>No ratings yet</span>
+            <span style={{ color: '#aaaaaa', fontSize: '13px' }}>
+              {sellerRatings.count > 0
+                ? `${sellerRatings.average.toFixed(1)} (${sellerRatings.count} ${sellerRatings.count === 1 ? 'rating' : 'ratings'})`
+                : 'No ratings yet'}
+            </span>
           </div>
         </div>
 
