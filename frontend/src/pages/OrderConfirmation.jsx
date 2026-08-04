@@ -1,8 +1,10 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { FaTag, FaCheckCircle } from 'react-icons/fa'
 
 export default function OrderConfirmation() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { title } = location.state || {}
 
   return (
     <div style={{
@@ -48,6 +50,11 @@ export default function OrderConfirmation() {
           <h1 style={{ color: 'white', fontSize: '24px', fontWeight: 'bold', margin: 0 }}>
             Order Confirmed!
           </h1>
+          {title && (
+            <p style={{ color: '#aaaaaa', fontSize: '15px', margin: 0 }}>
+              {title}
+            </p>
+          )}
           <p style={{ color: '#666', fontSize: '15px', margin: 0, lineHeight: '1.6' }}>
             Your order has been placed successfully. The seller will be in touch with you shortly.
           </p>

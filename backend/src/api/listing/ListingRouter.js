@@ -22,3 +22,6 @@ listingRouter.post('/', listingController.createOne)
 
 // DELETE: delete a listing given the listing's id
 listingRouter.delete('/', requireRole('ADMIN'), listingController.deleteOne)
+
+// PATCH: mark a listing as sold (checkout)
+listingRouter.patch('/:id/purchase', listingController.purchase)
