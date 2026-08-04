@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, cleanup } from '@testing-library/react'
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import Inbox from '../pages/Inbox'
 
@@ -10,9 +10,28 @@ vi.mock('axios', () => ({
   },
 }))
 
+// Inbox.jsx loads the current user and the full user list via native fetch
+const mockMe = { id: 'me1', name: 'You', email: 'you@my.yorku.ca' }
+const mockUsers = [
+  mockMe,
+  { id: 'jane1', name: 'Jane D.', email: 'jane.d@yorku.ca' },
+]
+
 beforeEach(() => {
   localStorage.clear()
   cleanup()
+  vi.stubGlobal('fetch', vi.fn((url) => {
+    if (url.includes('/api/user/me')) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(mockMe) })
+    }
+    if (url.includes('/api/chat/user/')) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
+    }
+    if (url.includes('/api/user')) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(mockUsers) })
+    }
+    return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+  }))
 })
 
 const renderInbox = () => {
@@ -44,14 +63,14 @@ describe('Inbox page', () => {
     expect(screen.getAllByText('Back')[0]).toBeInTheDocument()
   })
 
-  test('shows empty state when no conversations', () => {
+  test('shows empty state when no conversations', async () => {
     renderInbox()
-    expect(screen.getByText('No conversations yet')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('No conversations yet')).toBeInTheDocument())
   })
 
-  test('shows no conversation selected when inbox is empty', () => {
+  test('shows no conversation selected when inbox is empty', async () => {
     renderInbox()
-    expect(screen.getByText('No conversation selected')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('No conversation selected')).toBeInTheDocument())
   })
 
   test('opens new message modal when New button clicked', () => {
@@ -84,16 +103,19 @@ describe('Inbox page', () => {
     expect(screen.getByText('Start Conversation')).toBeDisabled()
   })
 
-  test('renders user list when searching in modal', () => {
+  test('renders user list when searching in modal', async () => {
     renderInbox()
+    // Let the initial /api/user fetch resolve and populate userList first.
+    await waitFor(() => expect(screen.getByText('No conversations yet')).toBeInTheDocument())
     fireEvent.click(screen.getAllByText(/New/)[0])
     const searchInput = screen.getByPlaceholderText('Search users...')
     fireEvent.focus(searchInput)
     expect(screen.getAllByText('Jane D.')[0]).toBeInTheDocument()
   })
 
-  test('filters users when typing in search', () => {
+  test('filters users when typing in search', async () => {
     renderInbox()
+    await waitFor(() => expect(screen.getByText('No conversations yet')).toBeInTheDocument())
     fireEvent.click(screen.getAllByText(/New/)[0])
     const searchInput = screen.getByPlaceholderText('Search users...')
     fireEvent.focus(searchInput)
@@ -101,14 +123,14 @@ describe('Inbox page', () => {
     expect(screen.getAllByText('Jane D.')[0]).toBeInTheDocument()
   })
 
-  test('shows conversation after creating one', () => {
-    localStorage.setItem('yubuy_conversations', JSON.stringify([{
-      chatId: 'user_johnmark_user_jane_general',
+  test('shows conversation after creating one', async () => {
+    localStorage.setItem(`yubuy_conversations_${mockMe.id}`, JSON.stringify([{
+      chatId: 'me1_jane1_general',
       sellerName: 'Jane D.',
       listingTitle: 'New Conversation',
       lastMessage: '',
     }]))
     renderInbox()
-    expect(screen.getAllByText('Jane D.')[0]).toBeInTheDocument()
+    await waitFor(() => expect(screen.getAllByText('Jane D.')[0]).toBeInTheDocument())
   })
 })
