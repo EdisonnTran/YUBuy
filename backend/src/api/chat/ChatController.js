@@ -22,6 +22,16 @@ export class ChatController {
             next(error)
         }
     }
+
+    getChatsForUser = async (_req, res, next) => {
+    try {
+        const { userId } = _req.params
+        const chatIds = await chatService.getChatsForUser(userId)
+        return res.status(200).send(chatIds)
+    } catch (error) {
+        next(error)
+    }
+}
 }
 
 export const chatController = new ChatController()

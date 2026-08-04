@@ -1,47 +1,32 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { FaTag, FaUser, FaArrowLeft, FaPaperPlane, FaImage, FaTimes, FaPlus, FaTrash, FaSearch } from 'react-icons/fa'
 import axios from 'axios'
 
 const MAX_CHARS = 500
-const API_BASE = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/chat`
+const CHAT_BASE = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/chat`
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
-// Placeholder users — will be replaced with real API call later
-const mockUsers = [
-  { id: 'user_jane', name: 'Jane D.' },
-  { id: 'user_mark', name: 'Mark T.' },
-  { id: 'user_alex', name: 'Alex K.' },
-  { id: 'user_sara', name: 'Sara M.' },
-]
-
-// Current logged in user — will come from auth context later
-const CURRENT_USER = { id: 'user_johnmark', name: 'Me' }
+function makeChatId(userA, userB, listingId = 'general') {
+  const sorted = [userA, userB].sort()
+  return `${sorted[0]}_${sorted[1]}_${listingId}`
+}
 
 export default function Inbox() {
   const navigate = useNavigate()
   const location = useLocation()
-  const preloaded = location.state || {}
 
-  const [conversations, setConversations] = useState(() => {
-    const saved = localStorage.getItem('yubuy_conversations')
-    const parsed = saved ? JSON.parse(saved) : []
-    if (preloaded.sellerId) {
-      const newConvo = {
-        chatId: `${CURRENT_USER.id}_${preloaded.sellerId}_${preloaded.listingId}`,
-        sellerName: preloaded.sellerName || 'Seller',
-        listingTitle: preloaded.listingTitle || 'Listing',
-        lastMessage: '',
-      }
-      const exists = parsed.find(c => c.chatId === newConvo.chatId)
-      if (!exists) {
-        const updated = [...parsed, newConvo]
-        localStorage.setItem('yubuy_conversations', JSON.stringify(updated))
-        return updated
-      }
-    }
-    return parsed
-  })
+  const searchParams = new URLSearchParams(location.search)
+  const preloaded = location.state || {
+    sellerId: searchParams.get('sellerId'),
+    listingId: searchParams.get('listingId'),
+    sellerName: searchParams.get('sellerName'),
+    listingTitle: searchParams.get('listingTitle'),
+  }
 
+  const [currentUser, setCurrentUser] = useState(null)
+  const [userList, setUserList] = useState([])
+  const [conversations, setConversations] = useState([])
   const [activeConvo, setActiveConvo] = useState(null)
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
@@ -54,24 +39,14 @@ export default function Inbox() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  const filteredUsers = mockUsers.filter(u =>
-    u.name.toLowerCase().includes(userSearch.toLowerCase())
-  )
+  const filteredUsers = userList
+    .filter(u => u.id !== currentUser?.id)
+    .filter(u => u.name.toLowerCase().includes(userSearch.toLowerCase()))
 
-  // On mount, auto-select first conversation and fetch its messages
-  useEffect(() => {
-    const saved = localStorage.getItem('yubuy_conversations')
-    const parsed = saved ? JSON.parse(saved) : []
-    if (parsed.length > 0) {
-      setActiveConvo(parsed[0])
-      fetchMessages(parsed[0].chatId)
-    }
-  }, [])
-
-  const fetchMessages = async (chatId) => {
+  const fetchMessages = useCallback(async (chatId) => {
     try {
       setLoading(true)
-      const res = await axios.get(`${API_BASE}/${chatId}`)
+      const res = await axios.get(`${CHAT_BASE}/${chatId}`)
       setMessages(res.data)
     } catch (err) {
       console.error('Failed to fetch messages:', err)
@@ -79,7 +54,104 @@ export default function Inbox() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [meRes, usersRes] = await Promise.all([
+          fetch(`${API_BASE}/api/user/me`, { credentials: 'include' }),
+          fetch(`${API_BASE}/api/user`, { credentials: 'include' }),
+        ])
+
+        if (!meRes.ok) return
+        const me = await meRes.json()
+        setCurrentUser(me)
+
+        let users = []
+        if (usersRes.ok) {
+          users = await usersRes.json()
+          setUserList(users)
+        }
+
+        const storageKey = `yubuy_conversations_${me.id}`
+        const saved = localStorage.getItem(storageKey)
+        let parsed = saved ? JSON.parse(saved) : []
+
+        // Fetch all chatIds from Azure that contain this user's ID
+        try {
+          const chatsRes = await fetch(`${API_BASE}/api/chat/user/${me.id}`, { credentials: 'include' })
+          if (chatsRes.ok) {
+            const chatIds = await chatsRes.json()
+            for (const chatId of chatIds) {
+              const exists = parsed.find(c => c.chatId === chatId)
+              if (!exists) {
+                const parts = chatId.split('_')
+                const otherUserId = parts[0] === me.id ? parts[1] : parts[0]
+                const otherUser = users.find(u => u.id === otherUserId)
+                parsed = [...parsed, {
+                  chatId,
+                  sellerName: otherUser?.name || 'Unknown User',
+                  listingTitle: parts[2] === 'general' ? 'New Conversation' : 'Listing',
+                  lastMessage: '',
+                }]
+              }
+            }
+            localStorage.setItem(storageKey, JSON.stringify(parsed))
+          }
+        } catch (err) {
+          console.error('Failed to fetch chats from Azure:', err)
+        }
+
+        // Handle preloaded conversation from listing detail
+        if (preloaded.sellerId) {
+          const chatId = makeChatId(me.id, preloaded.sellerId, preloaded.listingId || 'general')
+          const exists = parsed.find(c => c.chatId === chatId)
+          if (!exists) {
+            const newConvo = {
+              chatId,
+              sellerName: preloaded.sellerName || 'Seller',
+              listingTitle: preloaded.listingTitle || 'Listing',
+              lastMessage: '',
+            }
+            parsed = [...parsed, newConvo]
+            localStorage.setItem(storageKey, JSON.stringify(parsed))
+          }
+
+          // Add reverse entry for receiver
+          const reverseKey = `yubuy_conversations_${preloaded.sellerId}`
+          const reverseSaved = localStorage.getItem(reverseKey)
+          const reverseParsed = reverseSaved ? JSON.parse(reverseSaved) : []
+          const reverseExists = reverseParsed.find(c => c.chatId === chatId)
+          if (!reverseExists) {
+            localStorage.setItem(reverseKey, JSON.stringify([...reverseParsed, {
+              chatId,
+              sellerName: me.name,
+              listingTitle: preloaded.listingTitle || 'Listing',
+              lastMessage: '',
+            }]))
+          }
+
+          setConversations(parsed)
+          const targetConvo = parsed.find(c => c.chatId === chatId)
+          if (targetConvo) {
+            setActiveConvo(targetConvo)
+            fetchMessages(chatId)
+            return
+          }
+        }
+
+        setConversations(parsed)
+        if (parsed.length > 0) {
+          setActiveConvo(parsed[0])
+          fetchMessages(parsed[0].chatId)
+        }
+      } catch (err) {
+        console.error('Failed to load inbox data:', err)
+      }
+    }
+    loadData()
+  }, [fetchMessages])
 
   const handleSelectConvo = (convo) => {
     setActiveConvo(convo)
@@ -88,18 +160,21 @@ export default function Inbox() {
 
   const handleSend = async () => {
     if (!newMessage.trim() && !imagePreview) return
-    if (!activeConvo) return
+    if (!activeConvo || !currentUser) return
     try {
-      await axios.post(`${API_BASE}/${activeConvo.chatId}`, {
-        senderId: CURRENT_USER.id,
+      await axios.post(`${CHAT_BASE}/${activeConvo.chatId}`, {
+        senderId: currentUser.id,
         text: newMessage,
+        image: imagePreview || null,
       })
       await fetchMessages(activeConvo.chatId)
       const updated = conversations.map(c =>
-        c.chatId === activeConvo.chatId ? { ...c, lastMessage: newMessage } : c
+        c.chatId === activeConvo.chatId
+          ? { ...c, lastMessage: imagePreview && !newMessage ? 'Image' : newMessage }
+          : c
       )
       setConversations(updated)
-      localStorage.setItem('yubuy_conversations', JSON.stringify(updated))
+      localStorage.setItem(`yubuy_conversations_${currentUser.id}`, JSON.stringify(updated))
       setNewMessage('')
       setImagePreview(null)
     } catch (err) {
@@ -118,7 +193,7 @@ export default function Inbox() {
   const handleDeleteConversation = (chatId) => {
     const updated = conversations.filter(c => c.chatId !== chatId)
     setConversations(updated)
-    localStorage.setItem('yubuy_conversations', JSON.stringify(updated))
+    localStorage.setItem(`yubuy_conversations_${currentUser?.id}`, JSON.stringify(updated))
     setShowDeleteConfirm(null)
     if (activeConvo?.chatId === chatId) {
       if (updated.length > 0) {
@@ -132,8 +207,8 @@ export default function Inbox() {
   }
 
   const handleCreateConversation = () => {
-    if (!selectedUser) return
-    const chatId = `${CURRENT_USER.id}_${selectedUser.id}_general`
+    if (!selectedUser || !currentUser) return
+    const chatId = makeChatId(currentUser.id, selectedUser.id, 'general')
     const newConvo = {
       chatId,
       sellerName: selectedUser.name,
@@ -142,14 +217,29 @@ export default function Inbox() {
     }
     const updated = [...conversations, newConvo]
     setConversations(updated)
-    localStorage.setItem('yubuy_conversations', JSON.stringify(updated))
+    localStorage.setItem(`yubuy_conversations_${currentUser.id}`, JSON.stringify(updated))
+
+    // Add reverse entry for receiver
+    const reverseKey = `yubuy_conversations_${selectedUser.id}`
+    const reverseSaved = localStorage.getItem(reverseKey)
+    const reverseParsed = reverseSaved ? JSON.parse(reverseSaved) : []
+    const reverseExists = reverseParsed.find(c => c.chatId === chatId)
+    if (!reverseExists) {
+      localStorage.setItem(reverseKey, JSON.stringify([...reverseParsed, {
+        chatId,
+        sellerName: currentUser.name,
+        listingTitle: 'New Conversation',
+        lastMessage: '',
+      }]))
+    }
+
     setActiveConvo(newConvo)
     setShowNewMessage(false)
     setSelectedUser(null)
     setUserSearch('')
     if (newMessageText) {
-      axios.post(`${API_BASE}/${chatId}`, {
-        senderId: CURRENT_USER.id,
+      axios.post(`${CHAT_BASE}/${chatId}`, {
+        senderId: currentUser.id,
         text: newMessageText,
       }).then(() => fetchMessages(chatId))
         .catch(err => console.error('Failed to send first message:', err))
@@ -162,16 +252,11 @@ export default function Inbox() {
   return (
     <div style={{ display: 'flex', height: '100vh', backgroundColor: '#1a1a1a' }}>
 
-      {/* Left panel — conversation list */}
+      {/* Left panel */}
       <div style={{
-        width: '320px',
-        backgroundColor: '#2a2a2a',
-        display: 'flex',
-        flexDirection: 'column',
-        borderRight: '1px solid #333'
+        width: '320px', backgroundColor: '#2a2a2a',
+        display: 'flex', flexDirection: 'column', borderRight: '1px solid #333'
       }}>
-
-        {/* Header */}
         <div style={{ padding: '24px', borderBottom: '1px solid #333' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
             <FaTag style={{ fontSize: '20px', color: 'rgba(204,0,0,0.5)' }} />
@@ -184,16 +269,9 @@ export default function Inbox() {
             <button
               onClick={() => setShowNewMessage(true)}
               style={{
-                padding: '8px 12px',
-                backgroundColor: '#CC0000',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '13px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
+                padding: '8px 12px', backgroundColor: '#CC0000', color: 'white',
+                border: 'none', borderRadius: '8px', fontSize: '13px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '6px'
               }}
             >
               <FaPlus /> New
@@ -201,7 +279,6 @@ export default function Inbox() {
           </div>
         </div>
 
-        {/* Conversation list */}
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {conversations.length === 0 && (
             <p style={{ color: '#666', fontSize: '14px', textAlign: 'center', padding: '24px' }}>No conversations yet</p>
@@ -211,20 +288,17 @@ export default function Inbox() {
               key={convo.chatId}
               onClick={() => handleSelectConvo(convo)}
               style={{
-                padding: '16px 24px',
-                cursor: 'pointer',
+                padding: '16px 24px', cursor: 'pointer',
                 backgroundColor: activeConvo?.chatId === convo.chatId ? '#1a1a1a' : 'transparent',
                 borderLeft: activeConvo?.chatId === convo.chatId ? '3px solid #CC0000' : '3px solid transparent',
                 borderBottom: '1px solid #333',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
+                display: 'flex', alignItems: 'center', gap: '12px',
               }}
             >
               <div style={{
                 width: '40px', height: '40px', borderRadius: '50%',
-                backgroundColor: '#CC0000', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0
+                backgroundColor: '#CC0000', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', flexShrink: 0
               }}>
                 <FaUser style={{ color: 'white', fontSize: '16px' }} />
               </div>
@@ -249,15 +323,12 @@ export default function Inbox() {
           ))}
         </div>
 
-        {/* Back button */}
         <div style={{ padding: '16px 24px', borderTop: '1px solid #333' }}>
           <button
             onClick={() => navigate(-1)}
             style={{
-              width: '100%', padding: '12px',
-              backgroundColor: 'transparent', color: '#aaaaaa',
-              border: '1px solid #444', borderRadius: '12px',
-              fontSize: '14px', cursor: 'pointer',
+              width: '100%', padding: '12px', backgroundColor: 'transparent', color: '#aaaaaa',
+              border: '1px solid #444', borderRadius: '12px', fontSize: '14px', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
             }}
           >
@@ -266,14 +337,12 @@ export default function Inbox() {
         </div>
       </div>
 
-      {/* Right panel — active conversation */}
+      {/* Right panel */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         {activeConvo ? (
           <>
-            {/* Conversation header */}
             <div style={{
-              padding: '24px', backgroundColor: '#2a2a2a',
-              borderBottom: '1px solid #333',
+              padding: '24px', backgroundColor: '#2a2a2a', borderBottom: '1px solid #333',
               display: 'flex', alignItems: 'center', gap: '12px'
             }}>
               <div style={{
@@ -288,22 +357,26 @@ export default function Inbox() {
               </div>
             </div>
 
-            {/* Messages */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {loading && <p style={{ color: '#666', textAlign: 'center' }}>Loading messages...</p>}
               {!loading && messages.length === 0 && (
                 <p style={{ color: '#666', textAlign: 'center', fontSize: '14px' }}>No messages yet — say hello!</p>
               )}
               {messages.map((msg, i) => (
-                <div key={msg.messageId || i} style={{ display: 'flex', justifyContent: msg.senderId === CURRENT_USER.id ? 'flex-end' : 'flex-start' }}>
+                <div key={msg.messageId || i} style={{ display: 'flex', justifyContent: msg.senderId === currentUser?.id ? 'flex-end' : 'flex-start' }}>
                   <div style={{
                     maxWidth: '60%',
-                    backgroundColor: msg.senderId === CURRENT_USER.id ? '#CC0000' : '#2a2a2a',
-                    borderRadius: msg.senderId === CURRENT_USER.id ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                    backgroundColor: msg.senderId === currentUser?.id ? '#CC0000' : '#2a2a2a',
+                    borderRadius: msg.senderId === currentUser?.id ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                     padding: '12px 16px',
                   }}>
-                    <p style={{ color: 'white', fontSize: '14px', margin: '0 0 4px' }}>{msg.text}</p>
-                    <p style={{ color: msg.senderId === CURRENT_USER.id ? 'rgba(255,255,255,0.6)' : '#666', fontSize: '11px', margin: 0, textAlign: 'right' }}>
+                    {msg.image && (
+                      <img src={msg.image} alt="uploaded" style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: msg.text ? '8px' : 0 }} />
+                    )}
+                    {msg.text && (
+                      <p style={{ color: 'white', fontSize: '14px', margin: '0 0 4px' }}>{msg.text}</p>
+                    )}
+                    <p style={{ color: msg.senderId === currentUser?.id ? 'rgba(255,255,255,0.6)' : '#666', fontSize: '11px', margin: 0, textAlign: 'right' }}>
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
@@ -311,7 +384,6 @@ export default function Inbox() {
               ))}
             </div>
 
-            {/* Image preview */}
             {imagePreview && (
               <div style={{ padding: '0 24px 8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <img src={imagePreview} alt="preview" style={{ height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
@@ -321,7 +393,6 @@ export default function Inbox() {
               </div>
             )}
 
-            {/* Message input */}
             <div style={{ padding: '16px 24px', backgroundColor: '#2a2a2a', borderTop: '1px solid #333' }}>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
                 <label style={{ cursor: 'pointer', color: '#aaaaaa', fontSize: '20px', paddingBottom: '20px' }}>
@@ -336,10 +407,10 @@ export default function Inbox() {
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
                     rows={2}
                     style={{
-                      width: '100%', padding: '12px 16px',
-                      backgroundColor: '#1a1a1a', border: '1px solid #444',
-                      borderRadius: '12px', color: 'white', fontSize: '14px',
-                      outline: 'none', resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit'
+                      width: '100%', padding: '12px 16px', backgroundColor: '#1a1a1a',
+                      border: '1px solid #444', borderRadius: '12px', color: 'white',
+                      fontSize: '14px', outline: 'none', resize: 'none',
+                      boxSizing: 'border-box', fontFamily: 'inherit'
                     }}
                   />
                   <p style={{ color: newMessage.length >= MAX_CHARS ? '#CC0000' : '#666', fontSize: '11px', margin: '4px 0 0', textAlign: 'right' }}>
@@ -349,9 +420,8 @@ export default function Inbox() {
                 <button
                   onClick={handleSend}
                   style={{
-                    padding: '12px 20px', backgroundColor: '#CC0000',
-                    color: 'white', border: 'none', borderRadius: '12px',
-                    fontSize: '14px', cursor: 'pointer',
+                    padding: '12px 20px', backgroundColor: '#CC0000', color: 'white',
+                    border: 'none', borderRadius: '12px', fontSize: '14px', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px'
                   }}
                 >
@@ -402,7 +472,6 @@ export default function Inbox() {
               </button>
             </div>
 
-            {/* User search + dropdown */}
             <div>
               <label style={{ color: '#aaaaaa', fontSize: '13px', display: 'block', marginBottom: '8px' }}>Send to</label>
               <div style={{ position: 'relative' }}>
@@ -414,10 +483,9 @@ export default function Inbox() {
                   onChange={(e) => { setUserSearch(e.target.value); setSelectedUser(null); setShowUserDropdown(true) }}
                   onFocus={() => setShowUserDropdown(true)}
                   style={{
-                    width: '100%', padding: '12px 12px 12px 36px',
-                    backgroundColor: '#1a1a1a', border: '1px solid #444',
-                    borderRadius: '8px', color: 'white', fontSize: '14px',
-                    outline: 'none', boxSizing: 'border-box'
+                    width: '100%', padding: '12px 12px 12px 36px', backgroundColor: '#1a1a1a',
+                    border: '1px solid #444', borderRadius: '8px', color: 'white',
+                    fontSize: '14px', outline: 'none', boxSizing: 'border-box'
                   }}
                 />
                 {showUserDropdown && !selectedUser && (
@@ -457,7 +525,6 @@ export default function Inbox() {
               )}
             </div>
 
-            {/* Message input */}
             <div>
               <label style={{ color: '#aaaaaa', fontSize: '13px', display: 'block', marginBottom: '8px' }}>Message (optional)</label>
               <textarea
@@ -466,10 +533,10 @@ export default function Inbox() {
                 onChange={(e) => { if (e.target.value.length <= MAX_CHARS) setNewMessageText(e.target.value) }}
                 rows={3}
                 style={{
-                  width: '100%', padding: '12px',
-                  backgroundColor: '#1a1a1a', border: '1px solid #444',
-                  borderRadius: '8px', color: 'white', fontSize: '14px',
-                  outline: 'none', resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit'
+                  width: '100%', padding: '12px', backgroundColor: '#1a1a1a',
+                  border: '1px solid #444', borderRadius: '8px', color: 'white',
+                  fontSize: '14px', outline: 'none', resize: 'none',
+                  boxSizing: 'border-box', fontFamily: 'inherit'
                 }}
               />
               <p style={{ color: '#666', fontSize: '11px', margin: '4px 0 0', textAlign: 'right' }}>
