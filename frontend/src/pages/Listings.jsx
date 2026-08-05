@@ -146,6 +146,13 @@ export default function Listings() {
           >
             <FaEnvelope /> Messages
           </span>
+          <span
+            style={{ color: '#aaaaaa', fontWeight: 600, cursor: 'pointer' }}
+            onClick={() => navigate('/admin')}
+          >
+            Admin
+          </span>
+      
           <button
             type="button"
             onClick={() => navigate('/sell')}

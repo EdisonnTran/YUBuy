@@ -36,3 +36,5 @@ userRouter.post('/send-code', userController.sendVerificationCode)
 // POST: verifies the 6 digit code once entered by user
 userRouter.post('/verify-code', userController.verifyCode)
 
+// DELETE: Delete user
+userRouter.delete('/:id', userController.deleteOne)

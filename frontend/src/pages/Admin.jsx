@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
@@ -57,8 +58,8 @@ const getBadgeStyle = (status) => {
     fontSize: '12px',
     fontWeight: '600',
   }
-  if (status === 'Active') return { ...base, backgroundColor: '#1a3a1a', color: '#4caf50' }
-  if (status === 'Flagged' || status === 'Reported') return { ...base, backgroundColor: '#3a1a1a', color: '#f44336' }
+  if (status === 'ACTIVE') return { ...base, backgroundColor: '#1a3a1a', color: '#4caf50' }
+  if (status === 'SOLD' || status === 'REMOVED') return { ...base, backgroundColor: '#3a1a1a', color: '#f44336' }
   return { ...base, backgroundColor: '#3a2e00', color: '#ffb300' }
 }
 
@@ -68,12 +69,13 @@ export default function Admin() {
   const [users, setUsers] = useState([])
   const [loadingListings, setLoadingListings] = useState(true)
   const [loadingUsers, setLoadingUsers] = useState(true)
+  const navigate = useNavigate()
 
   // fetch listings on mount
   useEffect(() => {
     const fetchListings = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/listing`)
+        const res = await fetch(`${API_BASE}/api/listing`, { credentials: 'include' })
         const data = await res.json()
         setListings(data)
       } catch (err) {
@@ -89,7 +91,7 @@ export default function Admin() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/user`)
+        const res = await fetch(`${API_BASE}/api/user`, { credentials: 'include' })
         const data = await res.json()
         setUsers(data)
       } catch (err) {
@@ -103,26 +105,39 @@ export default function Admin() {
 
   const handleRemoveListing = async (id) => {
     try {
-      await fetch(`${API_BASE}/api/listing`, {
+      const res = await fetch(`${API_BASE}/api/listing`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ id })
       })
+      if (!res.ok) {
+        alert('Could not delete listing.')
+        return
+      }
       setListings(listings.filter((l) => l.id !== id))
     } catch (err) {
       console.error('Failed to delete listing:', err)
+      alert('Could not delete listing. Please try again.')
     }
   }
 
-  const handleApproveListing = (id) => {
-    // no approve endpoint exists yet — update local state only for now
-    setListings(listings.map((l) => l.id === id ? { ...l, status: 'Active' } : l))
-  }
-
-  const handleBanUser = (id) => {
-    // no ban endpoint exists yet — update local state only for now
-    console.log('Ban user — no DELETE /api/user endpoint exists yet, connect to backend later')
-    setUsers(users.filter((u) => u.id !== id))
+  const handleBanUser = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/user/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        alert(data.error || 'Could not delete user.')
+        return
+      }
+      setUsers(users.filter((u) => u.id !== id))
+    } catch (err) {
+      console.error('Failed to delete user:', err)
+      alert('Could not delete user. Please try again.')
+    }
   }
 
   return (
@@ -134,7 +149,21 @@ export default function Admin() {
           YU<span style={{ color: '#CC0000' }}>Buy</span>{' '}
           <span style={{ color: '#aaaaaa', fontWeight: '400', fontSize: '18px' }}>Admin</span>
         </h1>
-        <span style={{ color: '#aaaaaa', fontSize: '13px' }}>admin@yorku.ca</span>
+        <button
+          type="button"
+          onClick={() => navigate('/listings')}
+          style={{
+            padding: '10px 18px',
+            border: '1px solid #444',
+            borderRadius: '8px',
+            backgroundColor: 'transparent',
+            color: '#aaaaaa',
+            fontSize: '14px',
+            cursor: 'pointer',
+          }}
+        >
+          ← Back to Listings
+        </button>
       </div>
 
       {/* Tabs */}
@@ -173,16 +202,10 @@ export default function Admin() {
                   <td style={tableCellStyle}>{listing.categoryId}</td>
                   <td style={tableCellStyle}>${listing.price}</td>
                   <td style={tableCellStyle}>
-                    <span style={getBadgeStyle(listing.status ?? 'Active')}>{listing.status ?? 'Active'}</span>
+                    <span style={getBadgeStyle(listing.status ?? 'ACTIVE')}>{listing.status ?? 'ACTIVE'}</span>
                   </td>
                   <td style={tableCellStyle}>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        style={{ ...actionBtnStyle, backgroundColor: '#2a2a2a', color: '#4caf50', border: '1px solid #4caf50' }}
-                        onClick={() => handleApproveListing(listing.id)}
-                      >
-                        Approve
-                      </button>
                       <button
                         style={{ ...actionBtnStyle, backgroundColor: '#CC0000', color: 'white' }}
                         onClick={() => handleRemoveListing(listing.id)}

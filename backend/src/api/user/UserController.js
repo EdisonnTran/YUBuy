@@ -183,6 +183,19 @@ export class UserController {
         next(error)
     }
 }
+    deleteOne = async (_req, res, next) => {
+        try {
+            const user_id = _req.params.id
+            const serviceResponse = await userService.deleteOne(user_id)
+            res.status(200).send(serviceResponse)
+        }
+        catch (error) {
+            if (error.code === 'P2003') {
+                return res.status(400).json({ error: 'Cannot delete a user who still has listings, messages, or ratings.' })
+            }
+            next(error)
+        }
+    }
 
 }
 

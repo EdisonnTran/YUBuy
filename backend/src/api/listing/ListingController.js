@@ -8,7 +8,7 @@ export class ListingController {
             const listings = await listingService.getAll({ search, category });
             res.status(200).send(listings)
         }
-        catch (error) { 
+        catch (error) {
             next(error);
         }
     }
@@ -43,21 +43,21 @@ export class ListingController {
         }
     }
 
-getBySeller = async (_req, res, next) => {
-    try {
-        const seller_id = _req.params.id
-        const listings = await listingService.getBySeller(seller_id)
-        res.status(200).send(listings)
+    getBySeller = async (_req, res, next) => {
+        try {
+            const seller_id = _req.params.id
+            const listings = await listingService.getBySeller(seller_id)
+            res.status(200).send(listings)
+        }
+        catch (error) {
+            next(error)
+        }
     }
-    catch (error) {
-        next(error)
-    }
-}
 
     createOne = async (_req, res, next) => {
         try {
-            const {title, description = "", price, proximity, sellerId, categoryId} = _req.body
-            const payload = {title, description, price, proximity, sellerId, categoryId}
+            const { title, description = "", price, proximity, sellerId, categoryId } = _req.body
+            const payload = { title, description, price, proximity, sellerId, categoryId }
             const serviceResponse = await listingService.createOne(payload)
             res.status(200).send(serviceResponse)
         }
@@ -65,11 +65,11 @@ getBySeller = async (_req, res, next) => {
             next(error);
         }
     }
-    
+
     deleteOne = async (_req, res, next) => {
         try {
             const listing_id = _req.body.id
-            const serivceResponse = await listingService.deleteOne(listing_id)
+            const serviceResponse = await listingService.deleteOne(listing_id)
             res.status(200).send(serviceResponse)
         }
         catch (error) {
