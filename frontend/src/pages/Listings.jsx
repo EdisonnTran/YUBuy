@@ -59,6 +59,7 @@ export default function Listings() {
   const [listings, setListings] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     async function loadListings() {
@@ -75,6 +76,22 @@ export default function Listings() {
       }
     }
     loadListings()
+  }, [])
+
+  // Only show the Admin nav link to users whose role is actually ADMIN.
+  useEffect(() => {
+    async function checkAdmin() {
+      try {
+        const res = await fetch(`${API_BASE}/api/user/me`, { credentials: 'include' })
+        if (res.ok) {
+          const user = await res.json()
+          setIsAdmin(user.role === 'ADMIN')
+        }
+      } catch {
+        setIsAdmin(false)
+      }
+    }
+    checkAdmin()
   }, [])
 
   async function handleAddToWishlist(listingId) {
@@ -146,13 +163,14 @@ export default function Listings() {
           >
             <FaEnvelope /> Messages
           </span>
-          <span
-            style={{ color: '#aaaaaa', fontWeight: 600, cursor: 'pointer' }}
-            onClick={() => navigate('/admin')}
-          >
-            Admin
-          </span>
-      
+         {isAdmin && (
+            <span
+              style={{ color: '#aaaaaa', fontWeight: 600, cursor: 'pointer' }}
+              onClick={() => navigate('/admin')}
+            >
+              Admin
+            </span>
+          )}
           <button
             type="button"
             onClick={() => navigate('/sell')}
