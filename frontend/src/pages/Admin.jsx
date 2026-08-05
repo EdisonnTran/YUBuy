@@ -103,6 +103,7 @@ export default function Admin() {
     fetchUsers()
   }, [])
 
+  // remove listings from listings page and in db
   const handleRemoveListing = async (id) => {
     try {
       const res = await fetch(`${API_BASE}/api/listing`, {
@@ -122,6 +123,7 @@ export default function Admin() {
     }
   }
 
+  // delete a user and remove them from db
   const handleBanUser = async (id) => {
     try {
       const res = await fetch(`${API_BASE}/api/user/${id}`, {

@@ -13,6 +13,7 @@ export default function Register() {
   const [error, setError] = useState('')
   const navigate = useNavigate()
 
+  // Ensure all fields are filled in as required
   const handleRegister = async () => {
     if (!name || !email || !password) {
       setError('All fields are required')
@@ -35,7 +36,7 @@ export default function Register() {
         name,
         email,
         password
-      },{ withCredentials: true })
+      },{ withCredentials: true }) // session cookie set for render
       console.log('Register successful:', response.data)
       // connected to backend, navigates to listings on success
       navigate('/listings')

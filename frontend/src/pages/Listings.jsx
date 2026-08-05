@@ -61,6 +61,7 @@ export default function Listings() {
   const [error, setError] = useState('')
   const [isAdmin, setIsAdmin] = useState(false)
 
+  //Load listings from backend db
   useEffect(() => {
     async function loadListings() {
       try {
@@ -94,6 +95,7 @@ export default function Listings() {
     checkAdmin()
   }, [])
 
+  // Add listing to the current users wishlist
   async function handleAddToWishlist(listingId) {
     try {
       const userId = await getCurrentUserId()
