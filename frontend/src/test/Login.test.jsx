@@ -52,11 +52,14 @@ const renderLogin = () => {
     )
 }
 
-// Enter valid login credentials used by successful login tests
+// Enter valid login credentials used by successful login tests.
+// Note: this must NOT be the demo admin account's email
+// (yubuy.noreply@gmail.com) — that address now bypasses 2FA entirely
+// and navigates straight to /listings, which would break these tests.
 const enterValidLoginDetails = async (user) => {
     await user.type(
         screen.getByPlaceholderText(/email/i),
-        'yubuy.noreply@gmail.com'
+        'student@my.yorku.ca'
     )
 
     await user.type(
@@ -139,7 +142,8 @@ describe('Login Page', () => {
         ).toBeInTheDocument()
     })
 
-    // Test 2: Confirm that submitting form with empty fields displays "required fields" validation message
+    // Test 2: Confirm that submitting form with empty fields
+    // displays "required fields" validation message
     it('shows an error when the fields are empty', async () => {
         const user = userEvent.setup()
 
@@ -192,7 +196,8 @@ describe('Login Page', () => {
         expect(axios.post).not.toHaveBeenCalled()
     })
 
-    // Test 4: Confirm that if a password is shorter than 8 characters it is rejected
+    // Test 4: Confirm that if a password is shorter
+    // than 8 characters it is rejected
     it('shows an error when the password is too short', async () => {
         const user = userEvent.setup()
 
@@ -253,7 +258,8 @@ describe('Login Page', () => {
         ).toBeInTheDocument()
     })
 
-    // Test 6: Confirm that forgot password popup requires user to enter an email
+    // Test 6: Confirm that forgot password popup
+    // requires user to enter an email
     it('shows an error when the reset email is empty', async () => {
         const user = userEvent.setup()
 
@@ -278,7 +284,8 @@ describe('Login Page', () => {
         expect(axios.post).not.toHaveBeenCalled()
     })
 
-    // Test 7: Confirm that the forgot password popup rejects invalid email addresses
+    // Test 7: Confirm that the forgot password popup
+    // rejects invalid email addresses
     it('shows an error when reset email is invalid', async () => {
         const user = userEvent.setup()
 
@@ -318,7 +325,8 @@ describe('Login Page', () => {
         expect(axios.post).not.toHaveBeenCalled()
     })
 
-    // Test 8: Confirm that a valid forgot password request is sent to the backend endpoint
+    // Test 8: Confirm that a valid forgot password
+    // request is sent to the backend endpoint
     it('sends a password reset request for a valid email', async () => {
         const user = userEvent.setup()
 
@@ -431,7 +439,8 @@ describe('Login Page', () => {
         expect(axios.post).toHaveBeenCalledTimes(1)
     })
 
-    // Test 10: Confirm that the Create one now link  navigates to register page
+    // Test 10: Confirm that the Create one now link
+    // navigates to register page
     it('navigates to the register page', async () => {
         const user = userEvent.setup()
 
@@ -446,7 +455,8 @@ describe('Login Page', () => {
         ).toBeInTheDocument()
     })
 
-    // Test 11: Confirm that successful login  opens verification popup
+    // Test 11: Confirm that successful login
+    // opens verification popup
     it('successfully logs in and opens the verification popup', async () => {
         const user = userEvent.setup()
 
@@ -478,7 +488,7 @@ describe('Login Page', () => {
             1,
             'http://localhost:8080/api/user/login',
             {
-                email: 'yubuy.noreply@gmail.com',
+                email: 'student@my.yorku.ca',
                 password: '12345678'
             },
             { withCredentials: true }
@@ -488,7 +498,7 @@ describe('Login Page', () => {
             2,
             'http://localhost:8080/api/user/send-code',
             {
-                email: 'yubuy.noreply@gmail.com'
+                email: 'student@my.yorku.ca'
             }
         )
 
@@ -500,7 +510,7 @@ describe('Login Page', () => {
 
         expect(
             screen.getByText(
-                /yubuy\.noreply@gmail\.com/i
+                /student@my\.yorku\.ca/i
             )
         ).toBeInTheDocument()
 
@@ -511,7 +521,8 @@ describe('Login Page', () => {
         expect(axios.post).toHaveBeenCalledTimes(2)
     })
 
-    // Test 12: Confirms that a rejected login shows an error and NOT the verification popup
+    // Test 12: Confirms that a rejected login
+    // shows an error and NOT the verification popup
     it('shows an error when login fails', async () => {
         const user = userEvent.setup()
 
@@ -539,7 +550,7 @@ describe('Login Page', () => {
             })
         )
 
-       expect(axios.post).toHaveBeenCalledWith(
+        expect(axios.post).toHaveBeenCalledWith(
             'http://localhost:8080/api/user/login',
             {
                 email: 'yubuy@test.com',
@@ -562,7 +573,8 @@ describe('Login Page', () => {
         expect(axios.post).toHaveBeenCalledTimes(1)
     })
 
-    // Test 13: Confirm that a verification  code shorter than 6 digits is rejected
+    // Test 13: Confirm that a verification
+    // code shorter than 6 digits is rejected
     it('shows an error when verification code is too short', async () => {
         const user = userEvent.setup()
 
@@ -589,7 +601,8 @@ describe('Login Page', () => {
         expect(axios.post).toHaveBeenCalledTimes(2)
     })
 
-    // Test 14: Confirm that a valid code calls the verification endpoint and navigates to listings page
+    // Test 14: Confirm that a valid code calls the verification
+    // endpoint and navigates to listings page
     it('successfully verifies the code and navigates to listings page', async () => {
         const user = userEvent.setup()
 
@@ -638,7 +651,7 @@ describe('Login Page', () => {
             3,
             'http://localhost:8080/api/user/verify-code',
             {
-                email: 'yubuy.noreply@gmail.com',
+                email: 'student@my.yorku.ca',
                 code: '123456'
             }
         )
@@ -652,7 +665,8 @@ describe('Login Page', () => {
         expect(axios.post).toHaveBeenCalledTimes(3)
     })
 
-    // Test 15: Confirm that a rejected verification  request shows an error on the verification popup
+    // Test 15: Confirm that a rejected verification
+    // request shows an error on the verification popup
     it('shows an error when verification fails', async () => {
         const user = userEvent.setup()
 
@@ -701,7 +715,7 @@ describe('Login Page', () => {
             3,
             'http://localhost:8080/api/user/verify-code',
             {
-                email: 'yubuy.noreply@gmail.com',
+                email: 'student@my.yorku.ca',
                 code: '654321'
             }
         )
