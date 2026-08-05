@@ -42,7 +42,6 @@ export default function Login() {
       console.log('Login successful:', response.data)
 
       // Skip 2FA for the demo admin account so evaluators can test admin
-      // features without needing access to that inbox.
       if (email === 'yubuy.noreply@gmail.com') {
         navigate('/listings')
         return
