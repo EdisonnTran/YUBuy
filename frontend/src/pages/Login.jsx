@@ -19,6 +19,7 @@ export default function Login() {
   const [codeError, setCodeError] = useState('')
   const navigate = useNavigate()
 
+  // Error handling to ensure all fields are filled correctly
  const handleSignIn = async () => {
     if (!email || !password) {
       setError('All fields are required')
@@ -38,7 +39,7 @@ export default function Login() {
         const response = await axios.post(`${API_BASE}/api/user/login`, {
         email,
         password
-      }, { withCredentials: true })
+      }, { withCredentials: true }) //ensuring session cookie is set for render
       console.log('Login successful:', response.data)
 
       // Skip 2FA for the demo admin account so evaluators can test admin
@@ -57,6 +58,7 @@ export default function Login() {
     }
   }
 
+  // Error handling 2FA code 
   const handleVerifyCode = async () => {
     if (!code || code.length < 6) {
       setCodeError('Please enter the 6 digit code')
@@ -73,6 +75,7 @@ export default function Login() {
     }
   }
 
+  // error handling missing fields 
   const handleResetSubmit = async () => {
     if (!resetEmail) {
       setResetError('Please enter your email')
